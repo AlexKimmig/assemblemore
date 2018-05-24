@@ -6,7 +6,7 @@ Game-Of-Live                                                                    
                          5     ;
                          6     ; initialisierung
                          7     cseg at 0h
-0000 0120                8     ajmp init
+                         8     ajmp init
                          9     cseg at 100h
                         10
                         11     ; -----------------
@@ -14,364 +14,439 @@ Game-Of-Live                                                                    
                         13     ;------------------
                         14     ORG 0bh
 ****WARNING:ThisORGhaslowervaluethanthepreviousone
-000B 120080             15     call timer
-000E 32                 16     reti
+                        15     call timer
+                        16     reti
                         17     ;------------------
                         18     ;init
                         19     ;------------------
                         20     ORG 20h
                         21     init:
-0020 75A892             22     mov IE, #10010010b
-0023 758902             23     mov tmod, #00000010b
-0026 758AC0             24     mov tl0, #0c0h
-0029 758CC0             25     mov th0, #0c0h
-                        26     ;SETB TR0
-002C D280               27     setb P0.0
-002E 7800               28     MOV R0,#0 ;Adress for row
+                        22     mov IE, #10010010b
+                        23     mov tmod, #00000010b
+                        24     mov tl0, #0c0h
+                        25     mov th0, #0c0h
+                        26     SETB TR0
+                        27     setb P0.0
+                        28     MOV R0,#0 ;Adress for row
                         29     ;MOV R1,#20h ;Adress for row copy
                         30
                         31     ; Initiales zeichnen des Gleiters
-0030 74E0               32     MOV A,#11100000b
-0032 F2                 33     movx @R0,A
+                        32     MOV A,#11100000b
+                        33     movx @R0,A
                         34
-0033 08                 35     INC R0
-0034 7480               36     MOV A,#10000000b
-0036 F2                 37     movx @R0,A
+                        35     INC R0
+                        36     MOV A,#10000000b
+                        37     movx @R0,A
                         38
-0037 08                 39     INC R0
-0038 7440               40     MOV A,#01000000b
-003A F2                 41     movx @R0,A
+                        39     INC R0
+                        40     MOV A,#01000000b
+                        41     movx @R0,A
                         42
-003B 08                 43     INC R0
-003C 7400               44     MOV A,#00000000b
-003E F2                 45     movx @R0,A
+                        43     INC R0
+                        44     MOV A,#00000000b
+                        45     movx @R0,A
                         46
-003F 08                 47     INC R0
-0040 7400               48     MOV A,#00000000b
-0042 F2                 49     movx @R0,A
+                        47     INC R0
+                        48     MOV A,#00000000b
+                        49     movx @R0,A
                         50
-0043 08                 51     INC R0
-0044 7400               52     MOV A,#00000000b
-0046 F2                 53     movx @R0,A
+                        51     INC R0
+                        52     MOV A,#00000000b
+                        53     movx @R0,A
                         54
-0047 08                 55     INC R0
-0048 7400               56     MOV A,#00000000b
-004A F2                 57     movx @R0,A
+                        55     INC R0
+                        56     MOV A,#00000000b
+                        57     movx @R0,A
                         58
-004B 08                 59     INC R0
-004C 7400               60     MOV A,#00000000b
-004E F2                 61     movx @R0,A
-004F 120093             62     call new_generation
-0052 120139             63     call zeigen
-                        64     ;---------------------------
-                        65     anfang:
-0055 309013             66     jnb p1.0, starttimer
-0058 309116             67     jnb p1.1, stoptimer
-                        68     nurRT:
-005B 309219             69     jnb p1.2, RT
-005E 308C02             70     jnb tr0, da
-0061 0155               71     ajmp anfang
-                        72     da:
-****WARNING:Reservedkeywordusedaslabel
-0063 12013D             73     call display
-0066 3080F2             74     jnb P0.0, nurRT
-0069 0155               75     ajmp anfang
-                        76     ;------------------------------
-                        77     ; unterprogramme
-                        78     ;
-                        79     ; start timer
-                        80     starttimer:
-006B D28C               81     setb tr0; start timer0
-006D D290               82     setb P1.0
-006F 0155               83     ajmp anfang
-                        84     ; stop Timer
-                        85     stoptimer:
-0071 C28C               86     clr tr0; stop timer
-0073 D291               87     setb P1.1
-0075 0155               88     ajmp anfang
-                        89
-                        90     RT:
-0077 C28C               91     clr tr0; stop timer
-0079 D292               92     setb P1.2
-007B D280               93     setb P0.0
-007D 020020             94     ljmp init
+                        59     INC R0
+                        60     MOV A,#00000000b
+                        61     movx @R0,A
+                        62
+                        63
+                        64     MOV R0,#100
+                        65     MOV A,#11100000b
+                        66     movx @R0,A
+                        67
+                        68     INC R0
+                        69     MOV A,#10000000b
+                        70     movx @R0,A
+                        71
+                        72     INC R0
+                        73     MOV A,#01000000b
+                        74     movx @R0,A
+                        75
+                        76     INC R0
+                        77     MOV A,#00000000b
+                        78     movx @R0,A
+                        79
+                        80     INC R0
+                        81     MOV A,#00000000b
+                        82     movx @R0,A
+                        83
+                        84     INC R0
+                        85     MOV A,#00000000b
+                        86     movx @R0,A
+                        87
+                        88     INC R0
+                        89     MOV A,#00000000b
+                        90     movx @R0,A
+                        91
+                        92     INC R0
+                        93     MOV A,#00000000b
+                        94     movx @R0,A
                         95
                         96
                         97
-                        98     ;----------------------
-                        99     ; timer
-                       100     ;
-                       101     timer:
-0080 0D                102     inc r5
-0081 BD0506            103     cjne r5, #05h, nuranzeige
-0084 7D00              104     mov r5, #00h
-0086 120093            105     call new_generation
-0089 22                106     ret
-                       107
-                       108     nuranzeige:
-008A 120139            109     call zeigen
-008D 22                110     ret
-                       111
-                       112     hupe:
-008E C28C              113     clr tr0; stop timer
-0090 C280              114     clr P0.0
-0092 22                115     ret
-                       116
-                       117     ;----- Logik für die neue Generation -----
-                       118     new_generation:
-0093 7800              119     MOV R0,#0;
-0095 7A00              120     MOV R2,#0 ;Counter row starts with row 0
-                       121
-                       122     checkrow:
-0097 7B00              123     MOV R3,#0                       ;Counter column starts with column 0
-0099 7C00              124     MOV R4,#0                       ;R4 enthält die neuen Werte der Zellen der Zeile
-                       125     ;MOV R1,#0;
-                       126
-                       127     checkcolumn:
-009B 7F00              128     MOV R7,#0                       ;R7 enthält die anzahl der nachbarn
-009D 11DC              129     ACALL checkTop
-009F 11E6              130     ACALL checkMid
-00A1 11EB              131     ACALL checkBottom
-                       132
-00A3 90018F            133     mov DPTR,#table                 ;Setze DataPointer auf masken tabelle
-00A6 EB                134     mov A,R3
-00A7 93                135     movC A,@A+DPTR                  ;Hole Maske für Spalte R3
-00A8 FE                136     mov R6,A;
-                       137
-00A9 EA                138     MOV A,R2;
-00AA F8                139     MOV R0,A;
-00AB E2                140     MOVX A,@R0;                     ;Laden der entsprechenden Zeile
-00AC FD                141     MOV R5,A;
-                       142
-00AD EF                143     MOV A,R7;
-00AE B40207            144     CJNE A,#2,checkLessThan2        ;Wenn A != 2 überprüfe ob weniger
-00B1 EE                145     MOV A,R6                        ;Wenn A = 2 -> Behalte Wert der Zelle bei. Hole Maske
-00B2 5D                146     ANL A,R5                        ;Maskiere Wert der Zelle aus
-00B3 49                147     ORL A,R1                        ;Berechne neue Zeile
-00B4 F9                148     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
-00B5 0200C8            149     JMP checkEnd
-                       150
-                       151     checkLessThan2:
-00B8 5003              152     JNC checkMoreThan2              ;Wenn A < 2 -> C = 1
-00BA 0200C8            153     JMP checkEnd
-                       154
-                       155     checkMoreThan2:
-00BD B40308            156     CJNE A,#3,checkEnd              ;Wenn A != 3 muss die Zelle sterben
-00C0 EE                157     MOV A,R6                        ;Wenn A = 3 -> Setze Bit
-00C1 54FF              158     ANL A,#11111111b                ;Maskiere Wert der Zelle aus
-00C3 49                159     ORL A,R1                        ;Berechne neue Zeile
-00C4 F9                160     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
-00C5 0200C8            161     JMP checkEnd
-                       162
-                       163     checkEnd:
-                       164     ;A < 2 CLR
-                       165     ;A = 3 SETB
-                       166     ;A > 3 CLR
-                       167
-                       168     ;Repeat until column = 0
-00C8 0B                169     INC R3
-00C9 EB                170     MOV A,R3
-00CA B408CE            171     CJNE A,#8,checkcolumn
-                       172
-                       173      ;setting new row from storage copy
-                       174     ;movx @R0,TODO
-                       175
-                       176     ;Repeat until row = 0
-00CD EA                177     MOV A,R2;
-00CE 2414              178     ADD A,#20;
-00D0 F8                179     MOV R0,A;
-00D1 EC                180     MOV A,R4;
-00D2 F2                181     MOVX @R0,A;
-                       182
-00D3 0A                183     INC R2
-00D4 EA                184     MOV A,R2
-00D5 B408BF            185     CJNE A,#8,checkrow
-                       186
-00D8 120139            187     call zeigen
-00DB 22                188     ret
-                       189
-                       190
-                       191     checkTop:
-                       192     ;Lade Zähler der Zeile in Akku
-00DC EA                193     MOV A,R2;
-                       194     ;Wenn Akku gleich 0 muss zeile 7 betrachtet werden
-00DD 7D07              195     MOV R5,#7;
-00DF 6002              196     JZ gotTopRow
-                       197     ;Sonst wird die Aktuelle zeile gesetzt
-00E1 14                198     DEC A;
-00E2 FD                199     MOV R5,A;
-                       200     ;gotRow dient dazu, dass falls R2 = 0 R0 = 7 bleibt
-                       201     gotTopRow:
-00E3 11F9              202     ACALL calculateNeighbours
-00E5 22                203     ret
+                        98
+                        99
+                       100     INC R0
+                       101     MOV A,#00000000b
+                       102     movx @R0,A
+                       103     LCALL display
+                       104     ;---------------------------
+                       105     anfang:
+                       106     jnb p1.0, starttimer
+                       107     nurRT:
+                       108     jnb p1.2, RT
+                       109     jnb tr0, da
+                       110     ajmp anfang
+                       111     da:
+****WARNING:Reservedkeywordusedaslabel
+                       112     call display
+                       113     jnb P0.0, nurRT
+                       114     ajmp anfang
+                       115     ;------------------------------
+                       116     ; unterprogramme
+                       117     ;
+                       118     ; start timer
+                       119     starttimer:
+                       120     setb tr0; start timer0
+                       121     setb P1.0
+                       122     ajmp anfang
+                       123     ; stop Timer
+                       124     ;stoptimer:
+                       125     ;clr tr0; stop timer
+                       126     ;setb P1.1
+                       127     ;ajmp anfang
+                       128
+                       129     RT:
+                       130     clr tr0; stop timer
+                       131     setb P1.2
+                       132     setb P0.0
+                       133     ljmp init
+                       134
+                       135
+                       136
+                       137     ;----------------------
+                       138     ; timer
+                       139     ;
+                       140     timer:
+                       141     inc r5
+                       142     cjne r5, #05h, display
+****ERROR:Labelistoofarfor8-bitrelativeaddressing.Trytodisablepeepholeoptimizationsiftheyareon.
+                       143     mov r5, #00h
+                       144     call new_generation
+                       145     ret
+                       146
+                       147     ;hupe:
+                       148     ;clr tr0; stop timer
+                       149     ;clr P0.0
+                       150     ;ret
+                       151
+                       152     ;----- Logik für die neue Generation -----
+                       153     new_generation:
+                       154     MOV R0,#0;
+                       155     MOV R2,#0 ;Counter row starts with row 0
+                       156
+                       157     checkrow:
+                       158     MOV R3,#0                       ;Counter column starts with column 0
+                       159     MOV R4,#0                       ;R4 enthält die neuen Werte der Zellen der Zeile
+                       160     MOV R1,#0;
+                       161
+                       162     checkcolumn:
+                       163     MOV R7,#0
+                       164     mov DPTR,#table2                ;R7 enthält die anzahl der nachbarn
+                       165     ACALL checkTop
+                       166     ACALL checkMid
+                       167     ACALL checkBottom
+                       168
+                       169     mov DPTR,#table                 ;Setze DataPointer auf masken tabelle
+                       170     mov A,R3
+                       171     movC A,@A+DPTR                  ;Hole Maske für Spalte R3
+                       172     mov R6,A;
+                       173
+                       174     MOV A,R2;
+                       175     MOV R0,A;
+                       176     MOVX A,@R0;                     ;Laden der entsprechenden Zeile
+                       177     MOV R5,A;
+                       178     ;MOV R1,#0
+                       179
+                       180     MOV A,R7;
+                       181     CJNE A,#2,checkLessThan2        ;Wenn A != 2 überprüfe ob weniger
+                       182     MOV A,R6                        ;Wenn A = 2 -> Behalte Wert der Zelle bei. Hole Maske
+                       183     ANL A,R5                        ;Maskiere Wert der Zelle aus
+                       184     ORL A,R1                        ;Berechne neue Zeile
+                       185     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
+                       186     JMP checkEnd
+                       187
+                       188     checkLessThan2:
+                       189     JNC checkMoreThan2              ;Wenn A < 2 -> C = 1
+                       190     JMP checkEnd
+                       191
+                       192     checkMoreThan2:
+                       193     CJNE A,#3,checkEnd              ;Wenn A != 3 muss die Zelle sterben
+                       194     MOV A,R6                        ;Wenn A = 3 -> Setze Bit
+                       195     ANL A,#11111111b                ;Maskiere Wert der Zelle aus
+                       196     ORL A,R1                        ;Berechne neue Zeile
+                       197     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
+                       198     JMP checkEnd
+                       199
+                       200     checkEnd:
+                       201     ;A < 2 CLR
+                       202     ;A = 3 SETB
+                       203     ;A > 3 CLR
                        204
-                       205     checkMid:
-                       206     ;Lade Zähler der Zeile in Akku
-00E6 EA                207     MOV A,R2;
-00E7 FD                208     MOV R5,A;
-00E8 311D              209     ACALL calculateMiddleNeighbours
-                       210     ;DEC R7; ;NUR WENN MITTE GESEETZT
-00EA 22                211     ret
+                       205     ;Repeat until column = 0
+                       206     INC R3
+                       207     MOV A,R3
+                       208     CJNE A,#8,checkcolumn
+                       209
+                       210      ;setting new row from storage copy
+                       211     ;movx @R0,TODO
                        212
-                       213     checkBottom:
-                       214     ;Lade Zähler der Zeile in Akku
-00EB EA                215     MOV A,R2;
-                       216     ;Wenn Akku gleich 7 muss zeile 0 betrachtet werden
-00EC 7D00              217     MOV R5,#0;
-00EE B40703            218     CJNE A,#7,getBottomRow
-00F1 0200F6            219     JMP gotBottomrow
-                       220     ;Sonst wird die Aktuelle zeile gesetzt
-                       221     getBottomRow:
-00F4 04                222     INC A;
-00F5 FD                223     MOV R5,A;
-                       224     ;gotRow dient dazu, dass falls R2 = 7 R0 = 0 bleibt
-                       225     gotBottomRow:
-00F6 11F9              226     ACALL calculateNeighbours
-00F8 22                227     ret
-                       228
-                       229     calculateNeighbours:
-00F9 EA                230     MOV A,R2;
-00FA F8                231     MOV R0,A;
-                       232     ;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
-00FB 7408              233     MOV A,#8        ;Setze Akku auf 8 da
-00FD C3                234     CLR C           ;Löschen des Carry bits da es sonst die subtraktion stört
-00FE 9B                235     SUBB A,R3       ;7-ZeilenNummer den benötigten rechts rotationen entspricht
-00FF FC                236     MOV R4,A        ;Speichern des zählers
-                       237
-0100 ED                238     MOV A,R5;
-0101 F8                239     MOV R0,A;
-0102 E2                240     MOVX A,@R0;     ;Laden der entsprechenden Zeile
+                       213     ;Repeat until row = 0
+                       214     MOV A,R2;
+                       215     ADD A,#100;
+                       216     MOV R0,A;
+                       217     MOV A,R1;
+                       218     MOVX @R0,A;
+                       219
+                       220     INC R2
+                       221     MOV A,R2
+                       222     CJNE A,#8,checkrow
+                       223
+                       224     call copyNewGenerationToField
+                       225     ret
+                       226
+                       227
+                       228     checkTop:
+                       229     ;Lade Zähler der Zeile in Akku
+                       230     MOV A,R2;
+                       231     ;Wenn Akku gleich 0 muss zeile 7 betrachtet werden
+                       232     MOV R5,#7;
+                       233     JZ gotTopRow
+                       234     ;Sonst wird die Aktuelle zeile gesetzt
+                       235     DEC A;
+                       236     MOV R5,A;
+                       237     ;gotRow dient dazu, dass falls R2 = 0 R0 = 7 bleibt
+                       238     gotTopRow:
+                       239     ACALL calculateNeighbours
+                       240     ret
                        241
-                       242     ;Rotieren der Zeile bis der zähler R4 null ist
-0103 23                243     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-0104 23                244     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-                       245     rotateRight:    ;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
-0105 03                246     RR A;
-0106 DCFD              247     DJNZ R4,rotateRight
-0108 FE                248     MOV R6,A        ;Speichern der rotierten Zeile
+                       242     checkMid:
+                       243     ;Lade Zähler der Zeile in Akku
+                       244     MOV A,R2;
+                       245     MOV R5,A;
+                       246     ACALL calculateMiddleNeighbours
+                       247     ;DEC R7; ;NUR WENN MITTE GESEETZT
+                       248     ret
                        249
-0109 5401              250     ANL A,#00000001b;
-010B 6001              251     JZ neighbour1NotSet
-010D 0F                252     INC R7;
-                       253
-                       254     neighbour1NotSet:
-010E EE                255     MOV A,R6;
-010F 5402              256     ANL A,#00000010b;
-0111 6001              257     JZ neighbour2NotSet
-0113 0F                258     INC R7;
-                       259
-                       260     neighbour2NotSet:
-0114 EE                261     MOV A,R6;
-0115 5404              262     ANL A,#00000100b;
-0117 6001              263     JZ neighbour3NotSet
-0119 0F                264     INC R7;
+                       250     checkBottom:
+                       251     ;Lade Zähler der Zeile in Akku
+                       252     MOV A,R2;
+                       253     ;Wenn Akku gleich 7 muss zeile 0 betrachtet werden
+                       254     MOV R5,#0;
+                       255     CJNE A,#7,getBottomRow
+                       256     JMP gotBottomrow
+                       257     ;Sonst wird die Aktuelle zeile gesetzt
+                       258     getBottomRow:
+                       259     INC A;
+                       260     MOV R5,A;
+                       261     ;gotRow dient dazu, dass falls R2 = 7 R0 = 0 bleibt
+                       262     gotBottomRow:
+                       263     ACALL calculateNeighbours
+                       264     ret
                        265
-                       266     neighbour3NotSet:
-011A 7E00              267     MOV R6,#0;
-011C 22                268     ret
+                       266     calculateNeighbours:
+                       267     MOV A,R5;
+                       268     MOV R0,A;
                        269
-                       270
-                       271     calculateMiddleNeighbours:
-011D EA                272     MOV A,R2;
-011E F8                273     MOV R0,A;
-                       274     ;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
-011F 7408              275     MOV A,#8        ;Setze Akku auf 8 da
-0121 C3                276     CLR C           ;Löschen des Carry bits da es sonst die subtraktion stört
-0122 9B                277     SUBB A,R3       ;7-ZeilenNummer den benötigten rechts rotationen entspricht
-0123 FC                278     MOV R4,A        ;Speichern des zählers
-                       279
-0124 E2                280     MOVX A,@R0;     ;Laden der entsprechenden Zeile
-                       281
-                       282     ;Rotieren der Zeile bis der zähler R4 null ist
-0125 23                283     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-0126 23                284     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-                       285     rotateRight2:   ;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
-0127 03                286     RR A;
-0128 DCFD              287     DJNZ R4,rotateRight2
-012A FE                288     MOV R6,A        ;Speichern der rotierten Zeile
-                       289
-012B 5401              290     ANL A,#00000001b;
-012D 6001              291     JZ neighbour2NotSet2
-012F 0F                292     INC R7;
-                       293
-                       294     neighbour2NotSet2:
-0130 EE                295     MOV A,R6;
-0131 5404              296     ANL A,#00000100b;
-0133 6001              297     JZ neighbour3NotSet2
-0135 0F                298     INC R7;
+                       270     MOVX A,@R0;     ;Laden der entsprechenden Zeile
+                       271     MOV R6,A        ;Speichern der rotierten Zeile
+                       272
+                       273     MOV A,R3                ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+                       274     MOVC A,@A+DPTR
+                       275     ANL A,R6;
+                       276     JZ neighbour1NotSet
+                       277     INC R7;
+                       278
+                       279     neighbour1NotSet:
+                       280     MOV A,R3                ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+                       281     INC A
+                       282     MOVC A,@A+DPTR
+                       283     ANL A,R6;
+                       284     JZ neighbour2NotSet
+                       285     INC R7;
+                       286
+                       287     neighbour2NotSet:
+                       288     MOV A,R3                ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+                       289     INC A
+                       290     INC A
+                       291     MOVC A,@A+DPTR
+                       292     ANL A,R6;
+                       293     JZ neighbour3NotSet
+                       294     INC R7;
+                       295
+                       296     neighbour3NotSet:
+                       297     MOV R6,#0;
+                       298     ret
                        299
-                       300     neighbour3NotSet2:
-0136 7E00              301     MOV R6,#0;
-0138 22                302     ret
-                       303     ;----- Ende der Logik für die neue Generation -----
-                       304
-                       305     zeigen:
-0139 12013D            306     call display
-013C 22                307     ret
-                       308
-                       309     display:
+                       300
+                       301     calculateMiddleNeighbours:
+                       302     MOV A,R5;
+                       303     MOV R0,A;
+                       304     MOVX A,@R0;     ;Laden der entsprechenden Zeile
+                       305     MOV R6,A        ;Speichern der rotierten Zeile
+                       306     ;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
+                       307
+                       308     ;MOV R4,A       ;Speichern des zählers
+                       309
                        310
-013D 7800              311     mov R0,#0h
-013F E2                312     movx A,@R0
-0140 75B001            313     mov P3, #00000001b
-0143 F5A0              314     mov P2, a
-0145 75A000            315     mov P2,#0
-                       316
-0148 08                317     inc R0
-0149 E2                318     movx A,@R0
-014A 75B002            319     mov P3, #00000010b
-014D F5A0              320     mov P2, a
-014F 75A000            321     mov P2,#0
-                       322
-0152 08                323     inc R0
-0153 E2                324     movx A,@R0
-0154 75B004            325     mov P3, #00000100b
-0157 F5A0              326     mov P2, a
-0159 75A000            327     mov P2,#0
-                       328
-015C 08                329     inc R0
-015D E2                330     movx A,@R0
-015E 75B008            331     mov P3, #00001000b
-0161 F5A0              332     mov P2, a
-0163 75A000            333     mov P2,#0
-                       334
-0166 08                335     inc R0
-0167 E2                336     movx A,@R0
-0168 75B010            337     mov P3, #00010000b
-016B F5A0              338     mov P2, a
-016D 75A000            339     mov P2,#0
-                       340
-0170 08                341     inc R0
-0171 E2                342     movx A,@R0
-0172 75B020            343     mov P3, #00100000b
-0175 F5A0              344     mov P2, a
-0177 75A000            345     mov P2,#0
-                       346
-017A 08                347     inc R0
-017B E2                348     movx A,@R0
-017C 75B040            349     mov P3, #01000000b
-017F F5A0              350     mov P2, a
-0181 75A000            351     mov P2,#0
+                       311     ;Rotieren der Zeile bis der zähler R4 null ist
+                       312     ;RL A           ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+                       313     ;RL A           ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+                       314     ;rotateRight2:  ;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
+                       315     ;RR A;
+                       316     ;DJNZ R4,rotateRight2
+                       317
+                       318     MOV A,R3                ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+                       319     MOVC A,@A+DPTR
+                       320     ANL A,R6;
+                       321     JZ neighbour2NotSet2
+                       322     INC R7;
+                       323
+                       324     neighbour2NotSet2:
+                       325     MOV A,R3                ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+                       326     INC A
+                       327     INC A
+                       328     MOVC A,@A+DPTR
+                       329     ANL A,R6;
+                       330     JZ neighbour3NotSet2
+                       331     INC R7;
+                       332
+                       333     neighbour3NotSet2:
+                       334     MOV R6,#0;
+                       335     ret
+                       336
+                       337     copyNewGenerationToField:
+                       338     MOV R0,#100
+                       339     MOV R1,#0
+                       340     MOVX A,@R0
+                       341     MOVX @R1,A
+                       342
+                       343     MOV R0,#101
+                       344     MOV R1,#1
+                       345     MOVX A,@R0
+                       346     MOVX @R1,A
+                       347
+                       348     MOV R0,#102
+                       349     MOV R1,#2
+                       350     MOVX A,@R0
+                       351     MOVX @R1,A
                        352
-0184 08                353     inc R0
-0185 E2                354     movx A,@R0
-0186 75B080            355     mov P3, #10000000b
-0189 F5A0              356     mov P2, a
-018B 75A000            357     mov P2,#0
-                       358
-018E 22                359     ret
-                       360
-                       361
-018F 8040201008        362     table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
+                       353     MOV R0,#103
+                       354     MOV R1,#3
+                       355     MOVX A,@R0
+                       356     MOVX @R1,A
+                       357
+                       358     MOV R0,#104
+                       359     MOV R1,#4
+                       360     MOVX A,@R0
+                       361     MOVX @R1,A
+                       362
+                       363     MOV R0,#105
+                       364     MOV R1,#5
+                       365     MOVX A,@R0
+                       366     MOVX @R1,A
+                       367
+                       368     MOV R0,#106
+                       369     MOV R1,#6
+                       370     MOVX A,@R0
+                       371     MOVX @R1,A
+                       372
+                       373     MOV R0,#107
+                       374     MOV R1,#7
+                       375     MOVX A,@R0
+                       376     MOVX @R1,A
+                       377
+                       378     ret
+                       379
+                       380     display:
+                       381
+                       382     mov R0,#0h
+                       383     movx A,@R0
+                       384     mov P3, #00000001b
+                       385     mov P2, a
+                       386     mov P2,#0
+                       387
+                       388     inc R0
+                       389     movx A,@R0
+                       390     mov P3, #00000010b
+                       391     mov P2, a
+                       392     mov P2,#0
+                       393
+                       394     inc R0
+                       395     movx A,@R0
+                       396     mov P3, #00000100b
+                       397     mov P2, a
+                       398     mov P2,#0
+                       399
+                       400     inc R0
+                       401     movx A,@R0
+                       402     mov P3, #00001000b
+                       403     mov P2, a
+                       404     mov P2,#0
+                       405
+                       406     inc R0
+                       407     movx A,@R0
+                       408     mov P3, #00010000b
+                       409     mov P2, a
+                       410     mov P2,#0
+                       411
+                       412     inc R0
+                       413     movx A,@R0
+                       414     mov P3, #00100000b
+                       415     mov P2, a
+                       416     mov P2,#0
+                       417
+                       418     inc R0
+                       419     movx A,@R0
+                       420     mov P3, #01000000b
+                       421     mov P2, a
+                       422     mov P2,#0
+                       423
+                       424     inc R0
+                       425     movx A,@R0
+                       426     mov P3, #10000000b
+                       427     mov P2, a
+                       428     mov P2,#0
+                       429
+                       430     ret
+                       431
+                       432
+01C4 8040201008        433     table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
      040201
-                       363
-                       364     end
-ASSEMBLY COMPLETE, NO ERRORS FOUND, 2 WARNINGS
+01CC 0180402010        434     table2: db 00000001b, 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00
+     0804020180
+                       435
+                       436     end
+ASSEMBLY COMPLETE, NO ERRORS FOUND, 3 WARNINGS
 
 
 ERROR SUMMARY:
 Line 14, WARNING:ThisORGhaslowervaluethanthepreviousone
-Line 73, WARNING:Reservedkeywordusedaslabel
+Line 112, WARNING:Reservedkeywordusedaslabel
+Line 144, ERROR:Labelistoofarfor8-bitrelativeaddressing.Trytodisablepeepholeoptimizationsiftheyareon.
 
 SYMBOL TABLE:
 ??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
@@ -384,15 +459,15 @@ ADCLK. . . . . . . . . . . . . . . .  D  ADDR  00F2H  NOT USED
 ADCON. . . . . . . . . . . . . . . .  D  ADDR  00F3H  NOT USED
 ADDH . . . . . . . . . . . . . . . .  D  ADDR  00F5H  NOT USED
 ADDL . . . . . . . . . . . . . . . .  D  ADDR  00F4H  NOT USED
-ANFANG . . . . . . . . . . . . . . .  C  ADDR  0055H
+ANFANG . . . . . . . . . . . . . . .  C  ADDR  0079H
 AUXR . . . . . . . . . . . . . . . .  D  ADDR  008EH  NOT USED
 AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
 B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H  NOT USED
 BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
 BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
 BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
-CALCULATEMIDDLENEIGHBOURS. . . . . .  C  ADDR  011DH
-CALCULATENEIGHBOURS. . . . . . . . .  C  ADDR  00F9H
+CALCULATEMIDDLENEIGHBOURS. . . . . .  C  ADDR  012CH
+CALCULATENEIGHBOURS. . . . . . . . .  C  ADDR  0110H
 CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
 CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
 CCAP1H . . . . . . . . . . . . . . .  D  ADDR  00FBH  NOT USED
@@ -419,14 +494,14 @@ CCF4 . . . . . . . . . . . . . . . .  B  ADDR  00DCH  NOT USED
 CCON . . . . . . . . . . . . . . . .  D  ADDR  00D8H  NOT USED
 CFINT. . . . . . . . . . . . . . . .  C  ADDR  0033H  NOT USED
 CH . . . . . . . . . . . . . . . . .  D  ADDR  00F9H  NOT USED
-CHECKBOTTOM. . . . . . . . . . . . .  C  ADDR  00EBH
-CHECKCOLUMN. . . . . . . . . . . . .  C  ADDR  009BH
-CHECKEND . . . . . . . . . . . . . .  C  ADDR  00C8H
-CHECKLESSTHAN2 . . . . . . . . . . .  C  ADDR  00B8H
-CHECKMID . . . . . . . . . . . . . .  C  ADDR  00E6H
-CHECKMORETHAN2 . . . . . . . . . . .  C  ADDR  00BDH
-CHECKROW . . . . . . . . . . . . . .  C  ADDR  0097H
-CHECKTOP . . . . . . . . . . . . . .  C  ADDR  00DCH
+CHECKBOTTOM. . . . . . . . . . . . .  C  ADDR  0102H
+CHECKCOLUMN. . . . . . . . . . . . .  C  ADDR  00AFH
+CHECKEND . . . . . . . . . . . . . .  C  ADDR  00DFH
+CHECKLESSTHAN2 . . . . . . . . . . .  C  ADDR  00CFH
+CHECKMID . . . . . . . . . . . . . .  C  ADDR  00FDH
+CHECKMORETHAN2 . . . . . . . . . . .  C  ADDR  00D4H
+CHECKROW . . . . . . . . . . . . . .  C  ADDR  00A9H
+CHECKTOP . . . . . . . . . . . . . .  C  ADDR  00F3H
 CKCON. . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
 CKCON0 . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
 CKRL . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
@@ -434,12 +509,13 @@ CKSEL. . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
 CL . . . . . . . . . . . . . . . . .  D  ADDR  00E9H  NOT USED
 CLKREG . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
 CMOD . . . . . . . . . . . . . . . .  D  ADDR  00D9H  NOT USED
+COPYNEWGENERATIONTOFIELD . . . . . .  C  ADDR  0141H
 CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
 CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
 CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
 CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
-DA . . . . . . . . . . . . . . . . .  C  ADDR  0063H
-DISPLAY. . . . . . . . . . . . . . .  C  ADDR  013DH
+DA . . . . . . . . . . . . . . . . .  C  ADDR  0084H
+DISPLAY. . . . . . . . . . . . . . .  C  ADDR  0172H
 DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
 DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
 DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
@@ -461,10 +537,9 @@ EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
 EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
 F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
 FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
-GETBOTTOMROW . . . . . . . . . . . .  C  ADDR  00F4H
-GOTBOTTOMROW . . . . . . . . . . . .  C  ADDR  00F6H
-GOTTOPROW. . . . . . . . . . . . . .  C  ADDR  00E3H
-HUPE . . . . . . . . . . . . . . . .  C  ADDR  008EH  NOT USED
+GETBOTTOMROW . . . . . . . . . . . .  C  ADDR  010BH
+GOTBOTTOMROW . . . . . . . . . . . .  C  ADDR  010DH
+GOTTOPROW. . . . . . . . . . . . . .  C  ADDR  00FAH
 IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H
 IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
 IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
@@ -482,14 +557,13 @@ IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
 KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
 KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
 KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
-NEIGHBOUR1NOTSET . . . . . . . . . .  C  ADDR  010EH
-NEIGHBOUR2NOTSET . . . . . . . . . .  C  ADDR  0114H
-NEIGHBOUR2NOTSET2. . . . . . . . . .  C  ADDR  0130H
-NEIGHBOUR3NOTSET . . . . . . . . . .  C  ADDR  011AH
-NEIGHBOUR3NOTSET2. . . . . . . . . .  C  ADDR  0136H
-NEW_GENERATION . . . . . . . . . . .  C  ADDR  0093H
-NURANZEIGE . . . . . . . . . . . . .  C  ADDR  008AH
-NURRT. . . . . . . . . . . . . . . .  C  ADDR  005BH
+NEIGHBOUR1NOTSET . . . . . . . . . .  C  ADDR  011AH
+NEIGHBOUR2NOTSET . . . . . . . . . .  C  ADDR  0121H
+NEIGHBOUR2NOTSET2. . . . . . . . . .  C  ADDR  0136H
+NEIGHBOUR3NOTSET . . . . . . . . . .  C  ADDR  0129H
+NEIGHBOUR3NOTSET2. . . . . . . . . .  C  ADDR  013EH
+NEW_GENERATION . . . . . . . . . . .  C  ADDR  00A5H
+NURRT. . . . . . . . . . . . . . . .  C  ADDR  007CH
 OSCCON . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
 OV . . . . . . . . . . . . . . . . .  B  ADDR  00D2H  NOT USED
 P. . . . . . . . . . . . . . . . . .  B  ADDR  00D0H  NOT USED
@@ -529,11 +603,9 @@ RD . . . . . . . . . . . . . . . . .  B  ADDR  00B7H  NOT USED
 REN. . . . . . . . . . . . . . . . .  B  ADDR  009CH  NOT USED
 RESET. . . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
 RI . . . . . . . . . . . . . . . . .  B  ADDR  0098H  NOT USED
-ROTATERIGHT. . . . . . . . . . . . .  C  ADDR  0105H
-ROTATERIGHT2 . . . . . . . . . . . .  C  ADDR  0127H
 RS0. . . . . . . . . . . . . . . . .  B  ADDR  00D3H  NOT USED
 RS1. . . . . . . . . . . . . . . . .  B  ADDR  00D4H  NOT USED
-RT . . . . . . . . . . . . . . . . .  C  ADDR  0077H
+RT . . . . . . . . . . . . . . . . .  C  ADDR  0092H
 RXD. . . . . . . . . . . . . . . . .  B  ADDR  00B0H  NOT USED
 SADDR. . . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
 SADDR_0. . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
@@ -554,13 +626,13 @@ SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
 SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
 SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
 SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
-STARTTIMER . . . . . . . . . . . . .  C  ADDR  006BH
-STOPTIMER. . . . . . . . . . . . . .  C  ADDR  0071H
+STARTTIMER . . . . . . . . . . . . .  C  ADDR  008CH
 T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
 T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
 T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
 T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
-TABLE. . . . . . . . . . . . . . . .  C  ADDR  018FH
+TABLE. . . . . . . . . . . . . . . .  C  ADDR  01C4H
+TABLE2 . . . . . . . . . . . . . . .  C  ADDR  01CCH
 TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
 TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
 TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
@@ -571,7 +643,7 @@ TH0. . . . . . . . . . . . . . . . .  D  ADDR  008CH
 TH1. . . . . . . . . . . . . . . . .  D  ADDR  008DH  NOT USED
 TH2. . . . . . . . . . . . . . . . .  D  ADDR  00CDH  NOT USED
 TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
-TIMER. . . . . . . . . . . . . . . .  C  ADDR  0080H
+TIMER. . . . . . . . . . . . . . . .  C  ADDR  009BH
 TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
 TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
 TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
@@ -587,4 +659,3 @@ WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED
 WR . . . . . . . . . . . . . . . . .  B  ADDR  00B6H  NOT USED
-ZEIGEN . . . . . . . . . . . . . . .  C  ADDR  0139H

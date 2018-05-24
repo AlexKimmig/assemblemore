@@ -23,7 +23,7 @@ mov IE, #10010010b
 mov tmod, #00000010b
 mov tl0, #0c0h
 mov th0, #0c0h
-;SETB TR0
+SETB TR0
 setb P0.0
 MOV R0,#0 ;Adress for row
 ;MOV R1,#20h ;Adress for row copy
@@ -59,18 +59,57 @@ movx @R0,A
 INC R0
 MOV A,#00000000b
 movx @R0,A
-call new_generation
-call zeigen
+
+
+MOV R0,#100
+MOV A,#11100000b
+movx @R0,A
+
+INC R0
+MOV A,#10000000b
+movx @R0,A
+
+INC R0
+MOV A,#01000000b
+movx @R0,A
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+
+
+
+
+
+INC R0
+MOV A,#00000000b
+movx @R0,A
+LCALL display
 ;---------------------------
 anfang:
 jnb p1.0, starttimer
-jnb p1.1, stoptimer
 nurRT:
 jnb p1.2, RT
 jnb tr0, da
 ajmp anfang
 da:
-call display
+lcall display
 jnb P0.0, nurRT
 ajmp anfang
 ;------------------------------
@@ -82,10 +121,10 @@ setb tr0; start timer0
 setb P1.0
 ajmp anfang
 ; stop Timer
-stoptimer:
-clr tr0; stop timer
-setb P1.1
-ajmp anfang
+;stoptimer:
+;clr tr0; stop timer
+;setb P1.1
+;ajmp anfang
 
 RT:
 clr tr0; stop timer
@@ -93,26 +132,24 @@ setb P1.2
 setb P0.0
 ljmp init
 
-
+jmpdisplay:
+lcall display
+ret
 
 ;----------------------
 ; timer
 ;
 timer:
 inc r5
-cjne r5, #05h, nuranzeige
+cjne r5, #05h, jmpdisplay
 mov r5, #00h
 call new_generation
 ret
 
-nuranzeige:
-call zeigen
-ret
-
-hupe:
-clr tr0; stop timer
-clr P0.0
-ret
+;hupe:
+;clr tr0; stop timer
+;clr P0.0
+;ret
 
 ;----- Logik für die neue Generation -----
 new_generation:
@@ -122,10 +159,11 @@ MOV R2,#0 ;Counter row starts with row 0
 checkrow:
 MOV R3,#0 			;Counter column starts with column 0
 MOV R4,#0			;R4 enthält die neuen Werte der Zellen der Zeile
-;MOV R1,#0;
+MOV R1,#0;
 
 checkcolumn:
-MOV R7,#0			;R7 enthält die anzahl der nachbarn
+MOV R7,#0
+mov DPTR,#table2		;R7 enthält die anzahl der nachbarn
 ACALL checkTop
 ACALL checkMid
 ACALL checkBottom
@@ -139,6 +177,7 @@ MOV A,R2;
 MOV R0,A;
 MOVX A,@R0;			;Laden der entsprechenden Zeile
 MOV R5,A;
+;MOV R1,#0
 
 MOV A,R7;
 CJNE A,#2,checkLessThan2	;Wenn A != 2 überprüfe ob weniger
@@ -175,16 +214,16 @@ CJNE A,#8,checkcolumn
 
 ;Repeat until row = 0
 MOV A,R2;
-ADD A,#20;
+ADD A,#100;
 MOV R0,A;
-MOV A,R4;
+MOV A,R1;
 MOVX @R0,A;
 
 INC R2
 MOV A,R2
 CJNE A,#8,checkrow
 
-call zeigen
+call copyNewGenerationToField
 ret
 
 
@@ -227,39 +266,32 @@ ACALL calculateNeighbours
 ret
 
 calculateNeighbours:
-MOV A,R2;
-MOV R0,A;
-;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
-MOV A,#8	;Setze Akku auf 8 da
-CLR C		;Löschen des Carry bits da es sonst die subtraktion stört
-SUBB A,R3	;7-ZeilenNummer den benötigten rechts rotationen entspricht
-MOV R4,A	;Speichern des zählers
-
 MOV A,R5;
 MOV R0,A;
-MOVX A,@R0;	;Laden der entsprechenden Zeile
 
-;Rotieren der Zeile bis der zähler R4 null ist
-RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-rotateRight:	;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
-RR A;
-DJNZ R4,rotateRight
+MOVX A,@R0;	;Laden der entsprechenden Zeile
 MOV R6,A	;Speichern der rotierten Zeile
 
-ANL A,#00000001b;
+MOV A,R3		;7-ZeilenNummer den benötigten rechts rotationen entspricht
+MOVC A,@A+DPTR
+ANL A,R6;
 JZ neighbour1NotSet
 INC R7;
 
 neighbour1NotSet:
-MOV A,R6;
-ANL A,#00000010b;
+MOV A,R3		;7-ZeilenNummer den benötigten rechts rotationen entspricht
+INC A
+MOVC A,@A+DPTR
+ANL A,R6;
 JZ neighbour2NotSet
 INC R7;
 
 neighbour2NotSet:
-MOV A,R6;
-ANL A,#00000100b;
+MOV A,R3		;7-ZeilenNummer den benötigten rechts rotationen entspricht
+INC A
+INC A
+MOVC A,@A+DPTR
+ANL A,R6;
 JZ neighbour3NotSet
 INC R7;
 
@@ -269,41 +301,82 @@ ret
 
 
 calculateMiddleNeighbours:
-MOV A,R2;
+MOV A,R5;
 MOV R0,A;
-;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
-MOV A,#8	;Setze Akku auf 8 da
-CLR C		;Löschen des Carry bits da es sonst die subtraktion stört
-SUBB A,R3	;7-ZeilenNummer den benötigten rechts rotationen entspricht
-MOV R4,A	;Speichern des zählers
-
 MOVX A,@R0;	;Laden der entsprechenden Zeile
+MOV R6,A	;Speichern der rotierten Zeile
+;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
+
+;MOV R4,A	;Speichern des zählers
+
 
 ;Rotieren der Zeile bis der zähler R4 null ist
-RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
-rotateRight2:	;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
-RR A;
-DJNZ R4,rotateRight2
-MOV R6,A	;Speichern der rotierten Zeile
+;RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+;RL A		;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+;rotateRight2:	;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
+;RR A;
+;DJNZ R4,rotateRight2
 
-ANL A,#00000001b;
+MOV A,R3		;7-ZeilenNummer den benötigten rechts rotationen entspricht
+MOVC A,@A+DPTR
+ANL A,R6;
 JZ neighbour2NotSet2
 INC R7;
 
 neighbour2NotSet2:
-MOV A,R6;
-ANL A,#00000100b;
+MOV A,R3		;7-ZeilenNummer den benötigten rechts rotationen entspricht
+INC A
+INC A
+MOVC A,@A+DPTR
+ANL A,R6;
 JZ neighbour3NotSet2
 INC R7;
 
 neighbour3NotSet2:
 MOV R6,#0;
 ret
-;----- Ende der Logik für die neue Generation -----
 
-zeigen:
-call display
+copyNewGenerationToField:
+MOV R0,#100
+MOV R1,#0
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#101
+MOV R1,#1
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#102
+MOV R1,#2
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#103
+MOV R1,#3
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#104
+MOV R1,#4
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#105
+MOV R1,#5
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#106
+MOV R1,#6
+MOVX A,@R0
+MOVX @R1,A
+
+MOV R0,#107
+MOV R1,#7
+MOVX A,@R0
+MOVX @R1,A
+
 ret
 
 display:
@@ -360,5 +433,6 @@ ret
 
 
 table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
+table2: db 00000001b, 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b, 10000000b
 
 end

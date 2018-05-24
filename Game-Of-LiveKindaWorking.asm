@@ -12,6 +12,9 @@ cseg at 100h
 ; Interrupt
 ;------------------
 ORG 0bh
+mov tl0, #000h
+mov th0, #0fdh
+SETB TR0
 call timer
 reti
 ;------------------
@@ -20,69 +23,36 @@ reti
 ORG 20h
 init:
 mov IE, #10010010b
-mov tmod, #00000010b
-mov tl0, #0c0h
-mov th0, #0c0h
+mov tmod, #00000001b
+mov tl0, #000h
+mov th0, #0fdh
 SETB TR0
 setb P0.0
 MOV R0,#0 ;Adress for row
 ;MOV R1,#20h ;Adress for row copy
 
 ; Initiales zeichnen des Gleiters
-MOV A,#11100000b
-movx @R0,A
-
-INC R0
-MOV A,#10000000b
-movx @R0,A
-
-INC R0
-MOV A,#01000000b
-movx @R0,A
-
-INC R0
 MOV A,#00000000b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
+MOV A,#01111100b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
+MOV A,#10000100b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
+MOV A,#00000100b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
-movx @R0,A
-
-
-MOV R0,#100
-MOV A,#11100000b
+MOV A,#10001000b
 movx @R0,A
 
 INC R0
-MOV A,#10000000b
-movx @R0,A
-
-INC R0
-MOV A,#01000000b
-movx @R0,A
-
-INC R0
-MOV A,#00000000b
-movx @R0,A
-
-INC R0
-MOV A,#00000000b
-movx @R0,A
-
-INC R0
-MOV A,#00000000b
+MOV A,#00100000b
 movx @R0,A
 
 INC R0
@@ -95,12 +65,12 @@ movx @R0,A
 
 
 
-
-
-INC R0
-MOV A,#00000000b
-movx @R0,A
 LCALL display
+
+main:
+call new_generation
+jmp main
+
 ;---------------------------
 anfang:
 jnb p1.0, starttimer
@@ -138,12 +108,14 @@ ret
 
 ;----------------------
 ; timer
+
 ;
 timer:
-inc r5
-cjne r5, #05h, jmpdisplay
-mov r5, #00h
-call new_generation
+push 00h
+push A
+call display
+pop A
+pop 00h
 ret
 
 ;hupe:
@@ -380,6 +352,7 @@ MOVX @R1,A
 ret
 
 display:
+mov 42,A
 
 mov R0,#0h
 movx A,@R0
@@ -428,6 +401,8 @@ movx A,@R0
 mov P3, #10000000b
 mov P2, a
 mov P2,#0
+
+mov A,42
 
 ret
 

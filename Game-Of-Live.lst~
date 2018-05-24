@@ -1,0 +1,590 @@
+Game-Of-Live                                                                                                            PAGE 1
+                         1     ;Countdown / Zaehler auf Null
+                         2     ;in Minuten und Sekunden
+                         3     ;
+                         4     ; mit 4x7-segment anzeige
+                         5     ;
+                         6     ; initialisierung
+                         7     cseg at 0h
+0000 0120                8     ajmp init
+                         9     cseg at 100h
+                        10
+                        11     ; -----------------
+                        12     ; Interrupt
+                        13     ;------------------
+                        14     ORG 0bh
+****WARNING:ThisORGhaslowervaluethanthepreviousone
+000B 120080             15     call timer
+000E 32                 16     reti
+                        17     ;------------------
+                        18     ;init
+                        19     ;------------------
+                        20     ORG 20h
+                        21     init:
+0020 75A892             22     mov IE, #10010010b
+0023 758902             23     mov tmod, #00000010b
+0026 758AC0             24     mov tl0, #0c0h
+0029 758CC0             25     mov th0, #0c0h
+                        26     ;SETB TR0
+002C D280               27     setb P0.0
+002E 7800               28     MOV R0,#0 ;Adress for row
+                        29     ;MOV R1,#20h ;Adress for row copy
+                        30
+                        31     ; Initiales zeichnen des Gleiters
+0030 74E0               32     MOV A,#11100000b
+0032 F2                 33     movx @R0,A
+                        34
+0033 08                 35     INC R0
+0034 7480               36     MOV A,#10000000b
+0036 F2                 37     movx @R0,A
+                        38
+0037 08                 39     INC R0
+0038 7440               40     MOV A,#01000000b
+003A F2                 41     movx @R0,A
+                        42
+003B 08                 43     INC R0
+003C 7400               44     MOV A,#00000000b
+003E F2                 45     movx @R0,A
+                        46
+003F 08                 47     INC R0
+0040 7400               48     MOV A,#00000000b
+0042 F2                 49     movx @R0,A
+                        50
+0043 08                 51     INC R0
+0044 7400               52     MOV A,#00000000b
+0046 F2                 53     movx @R0,A
+                        54
+0047 08                 55     INC R0
+0048 7400               56     MOV A,#00000000b
+004A F2                 57     movx @R0,A
+                        58
+004B 08                 59     INC R0
+004C 7400               60     MOV A,#00000000b
+004E F2                 61     movx @R0,A
+004F 120093             62     call new_generation
+0052 120139             63     call zeigen
+                        64     ;---------------------------
+                        65     anfang:
+0055 309013             66     jnb p1.0, starttimer
+0058 309116             67     jnb p1.1, stoptimer
+                        68     nurRT:
+005B 309219             69     jnb p1.2, RT
+005E 308C02             70     jnb tr0, da
+0061 0155               71     ajmp anfang
+                        72     da:
+****WARNING:Reservedkeywordusedaslabel
+0063 12013D             73     call display
+0066 3080F2             74     jnb P0.0, nurRT
+0069 0155               75     ajmp anfang
+                        76     ;------------------------------
+                        77     ; unterprogramme
+                        78     ;
+                        79     ; start timer
+                        80     starttimer:
+006B D28C               81     setb tr0; start timer0
+006D D290               82     setb P1.0
+006F 0155               83     ajmp anfang
+                        84     ; stop Timer
+                        85     stoptimer:
+0071 C28C               86     clr tr0; stop timer
+0073 D291               87     setb P1.1
+0075 0155               88     ajmp anfang
+                        89
+                        90     RT:
+0077 C28C               91     clr tr0; stop timer
+0079 D292               92     setb P1.2
+007B D280               93     setb P0.0
+007D 020020             94     ljmp init
+                        95
+                        96
+                        97
+                        98     ;----------------------
+                        99     ; timer
+                       100     ;
+                       101     timer:
+0080 0D                102     inc r5
+0081 BD0506            103     cjne r5, #05h, nuranzeige
+0084 7D00              104     mov r5, #00h
+0086 120093            105     call new_generation
+0089 22                106     ret
+                       107
+                       108     nuranzeige:
+008A 120139            109     call zeigen
+008D 22                110     ret
+                       111
+                       112     hupe:
+008E C28C              113     clr tr0; stop timer
+0090 C280              114     clr P0.0
+0092 22                115     ret
+                       116
+                       117     ;----- Logik für die neue Generation -----
+                       118     new_generation:
+0093 7800              119     MOV R0,#0;
+0095 7A00              120     MOV R2,#0 ;Counter row starts with row 0
+                       121
+                       122     checkrow:
+0097 7B00              123     MOV R3,#0                       ;Counter column starts with column 0
+0099 7C00              124     MOV R4,#0                       ;R4 enthält die neuen Werte der Zellen der Zeile
+                       125     ;MOV R1,#0;
+                       126
+                       127     checkcolumn:
+009B 7F00              128     MOV R7,#0                       ;R7 enthält die anzahl der nachbarn
+009D 11DC              129     ACALL checkTop
+009F 11E6              130     ACALL checkMid
+00A1 11EB              131     ACALL checkBottom
+                       132
+00A3 90018F            133     mov DPTR,#table                 ;Setze DataPointer auf masken tabelle
+00A6 EB                134     mov A,R3
+00A7 93                135     movC A,@A+DPTR                  ;Hole Maske für Spalte R3
+00A8 FE                136     mov R6,A;
+                       137
+00A9 EA                138     MOV A,R2;
+00AA F8                139     MOV R0,A;
+00AB E2                140     MOVX A,@R0;                     ;Laden der entsprechenden Zeile
+00AC FD                141     MOV R5,A;
+                       142
+00AD EF                143     MOV A,R7;
+00AE B40207            144     CJNE A,#2,checkLessThan2        ;Wenn A != 2 überprüfe ob weniger
+00B1 EE                145     MOV A,R6                        ;Wenn A = 2 -> Behalte Wert der Zelle bei. Hole Maske
+00B2 5D                146     ANL A,R5                        ;Maskiere Wert der Zelle aus
+00B3 49                147     ORL A,R1                        ;Berechne neue Zeile
+00B4 F9                148     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
+00B5 0200C8            149     JMP checkEnd
+                       150
+                       151     checkLessThan2:
+00B8 5003              152     JNC checkMoreThan2              ;Wenn A < 2 -> C = 1
+00BA 0200C8            153     JMP checkEnd
+                       154
+                       155     checkMoreThan2:
+00BD B40308            156     CJNE A,#3,checkEnd              ;Wenn A != 3 muss die Zelle sterben
+00C0 EE                157     MOV A,R6                        ;Wenn A = 3 -> Setze Bit
+00C1 54FF              158     ANL A,#11111111b                ;Maskiere Wert der Zelle aus
+00C3 49                159     ORL A,R1                        ;Berechne neue Zeile
+00C4 F9                160     MOV R1,A                        ;Füge Wert zur neuen Zeile hinzu
+00C5 0200C8            161     JMP checkEnd
+                       162
+                       163     checkEnd:
+                       164     ;A < 2 CLR
+                       165     ;A = 3 SETB
+                       166     ;A > 3 CLR
+                       167
+                       168     ;Repeat until column = 0
+00C8 0B                169     INC R3
+00C9 EB                170     MOV A,R3
+00CA B408CE            171     CJNE A,#8,checkcolumn
+                       172
+                       173      ;setting new row from storage copy
+                       174     ;movx @R0,TODO
+                       175
+                       176     ;Repeat until row = 0
+00CD EA                177     MOV A,R2;
+00CE 2414              178     ADD A,#20;
+00D0 F8                179     MOV R0,A;
+00D1 EC                180     MOV A,R4;
+00D2 F2                181     MOVX @R0,A;
+                       182
+00D3 0A                183     INC R2
+00D4 EA                184     MOV A,R2
+00D5 B408BF            185     CJNE A,#8,checkrow
+                       186
+00D8 120139            187     call zeigen
+00DB 22                188     ret
+                       189
+                       190
+                       191     checkTop:
+                       192     ;Lade Zähler der Zeile in Akku
+00DC EA                193     MOV A,R2;
+                       194     ;Wenn Akku gleich 0 muss zeile 7 betrachtet werden
+00DD 7D07              195     MOV R5,#7;
+00DF 6002              196     JZ gotTopRow
+                       197     ;Sonst wird die Aktuelle zeile gesetzt
+00E1 14                198     DEC A;
+00E2 FD                199     MOV R5,A;
+                       200     ;gotRow dient dazu, dass falls R2 = 0 R0 = 7 bleibt
+                       201     gotTopRow:
+00E3 11F9              202     ACALL calculateNeighbours
+00E5 22                203     ret
+                       204
+                       205     checkMid:
+                       206     ;Lade Zähler der Zeile in Akku
+00E6 EA                207     MOV A,R2;
+00E7 FD                208     MOV R5,A;
+00E8 311D              209     ACALL calculateMiddleNeighbours
+                       210     ;DEC R7; ;NUR WENN MITTE GESEETZT
+00EA 22                211     ret
+                       212
+                       213     checkBottom:
+                       214     ;Lade Zähler der Zeile in Akku
+00EB EA                215     MOV A,R2;
+                       216     ;Wenn Akku gleich 7 muss zeile 0 betrachtet werden
+00EC 7D00              217     MOV R5,#0;
+00EE B40703            218     CJNE A,#7,getBottomRow
+00F1 0200F6            219     JMP gotBottomrow
+                       220     ;Sonst wird die Aktuelle zeile gesetzt
+                       221     getBottomRow:
+00F4 04                222     INC A;
+00F5 FD                223     MOV R5,A;
+                       224     ;gotRow dient dazu, dass falls R2 = 7 R0 = 0 bleibt
+                       225     gotBottomRow:
+00F6 11F9              226     ACALL calculateNeighbours
+00F8 22                227     ret
+                       228
+                       229     calculateNeighbours:
+00F9 EA                230     MOV A,R2;
+00FA F8                231     MOV R0,A;
+                       232     ;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
+00FB 7408              233     MOV A,#8        ;Setze Akku auf 8 da
+00FD C3                234     CLR C           ;Löschen des Carry bits da es sonst die subtraktion stört
+00FE 9B                235     SUBB A,R3       ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+00FF FC                236     MOV R4,A        ;Speichern des zählers
+                       237
+0100 ED                238     MOV A,R5;
+0101 F8                239     MOV R0,A;
+0102 E2                240     MOVX A,@R0;     ;Laden der entsprechenden Zeile
+                       241
+                       242     ;Rotieren der Zeile bis der zähler R4 null ist
+0103 23                243     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+0104 23                244     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+                       245     rotateRight:    ;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
+0105 03                246     RR A;
+0106 DCFD              247     DJNZ R4,rotateRight
+0108 FE                248     MOV R6,A        ;Speichern der rotierten Zeile
+                       249
+0109 5401              250     ANL A,#00000001b;
+010B 6001              251     JZ neighbour1NotSet
+010D 0F                252     INC R7;
+                       253
+                       254     neighbour1NotSet:
+010E EE                255     MOV A,R6;
+010F 5402              256     ANL A,#00000010b;
+0111 6001              257     JZ neighbour2NotSet
+0113 0F                258     INC R7;
+                       259
+                       260     neighbour2NotSet:
+0114 EE                261     MOV A,R6;
+0115 5404              262     ANL A,#00000100b;
+0117 6001              263     JZ neighbour3NotSet
+0119 0F                264     INC R7;
+                       265
+                       266     neighbour3NotSet:
+011A 7E00              267     MOV R6,#0;
+011C 22                268     ret
+                       269
+                       270
+                       271     calculateMiddleNeighbours:
+011D EA                272     MOV A,R2;
+011E F8                273     MOV R0,A;
+                       274     ;Berechnen um wie viele Stellen die Zeile nach rechts verschoben werden muss
+011F 7408              275     MOV A,#8        ;Setze Akku auf 8 da
+0121 C3                276     CLR C           ;Löschen des Carry bits da es sonst die subtraktion stört
+0122 9B                277     SUBB A,R3       ;7-ZeilenNummer den benötigten rechts rotationen entspricht
+0123 FC                278     MOV R4,A        ;Speichern des zählers
+                       279
+0124 E2                280     MOVX A,@R0;     ;Laden der entsprechenden Zeile
+                       281
+                       282     ;Rotieren der Zeile bis der zähler R4 null ist
+0125 23                283     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+0126 23                284     RL A            ;einmalig links rotieren da erst nach der rechts rotation auf 0 geprüft wird
+                       285     rotateRight2:   ;so wird verhindert dass wenn der zähler 0 ist eine rotation stattfindet
+0127 03                286     RR A;
+0128 DCFD              287     DJNZ R4,rotateRight2
+012A FE                288     MOV R6,A        ;Speichern der rotierten Zeile
+                       289
+012B 5401              290     ANL A,#00000001b;
+012D 6001              291     JZ neighbour2NotSet2
+012F 0F                292     INC R7;
+                       293
+                       294     neighbour2NotSet2:
+0130 EE                295     MOV A,R6;
+0131 5404              296     ANL A,#00000100b;
+0133 6001              297     JZ neighbour3NotSet2
+0135 0F                298     INC R7;
+                       299
+                       300     neighbour3NotSet2:
+0136 7E00              301     MOV R6,#0;
+0138 22                302     ret
+                       303     ;----- Ende der Logik für die neue Generation -----
+                       304
+                       305     zeigen:
+0139 12013D            306     call display
+013C 22                307     ret
+                       308
+                       309     display:
+                       310
+013D 7800              311     mov R0,#0h
+013F E2                312     movx A,@R0
+0140 75B001            313     mov P3, #00000001b
+0143 F5A0              314     mov P2, a
+0145 75A000            315     mov P2,#0
+                       316
+0148 08                317     inc R0
+0149 E2                318     movx A,@R0
+014A 75B002            319     mov P3, #00000010b
+014D F5A0              320     mov P2, a
+014F 75A000            321     mov P2,#0
+                       322
+0152 08                323     inc R0
+0153 E2                324     movx A,@R0
+0154 75B004            325     mov P3, #00000100b
+0157 F5A0              326     mov P2, a
+0159 75A000            327     mov P2,#0
+                       328
+015C 08                329     inc R0
+015D E2                330     movx A,@R0
+015E 75B008            331     mov P3, #00001000b
+0161 F5A0              332     mov P2, a
+0163 75A000            333     mov P2,#0
+                       334
+0166 08                335     inc R0
+0167 E2                336     movx A,@R0
+0168 75B010            337     mov P3, #00010000b
+016B F5A0              338     mov P2, a
+016D 75A000            339     mov P2,#0
+                       340
+0170 08                341     inc R0
+0171 E2                342     movx A,@R0
+0172 75B020            343     mov P3, #00100000b
+0175 F5A0              344     mov P2, a
+0177 75A000            345     mov P2,#0
+                       346
+017A 08                347     inc R0
+017B E2                348     movx A,@R0
+017C 75B040            349     mov P3, #01000000b
+017F F5A0              350     mov P2, a
+0181 75A000            351     mov P2,#0
+                       352
+0184 08                353     inc R0
+0185 E2                354     movx A,@R0
+0186 75B080            355     mov P3, #10000000b
+0189 F5A0              356     mov P2, a
+018B 75A000            357     mov P2,#0
+                       358
+018E 22                359     ret
+                       360
+                       361
+018F 8040201008        362     table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
+     040201
+                       363
+                       364     end
+ASSEMBLY COMPLETE, NO ERRORS FOUND, 2 WARNINGS
+
+
+ERROR SUMMARY:
+Line 14, WARNING:ThisORGhaslowervaluethanthepreviousone
+Line 73, WARNING:Reservedkeywordusedaslabel
+
+SYMBOL TABLE:
+??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
+??VERSION. . . . . . . . . . . . . .  N  NUMB  0149H  NOT USED
+AC . . . . . . . . . . . . . . . . .  B  ADDR  00D6H  NOT USED
+ACC. . . . . . . . . . . . . . . . .  D  ADDR  00E0H  NOT USED
+ACSR . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+ADCF . . . . . . . . . . . . . . . .  D  ADDR  00F6H  NOT USED
+ADCLK. . . . . . . . . . . . . . . .  D  ADDR  00F2H  NOT USED
+ADCON. . . . . . . . . . . . . . . .  D  ADDR  00F3H  NOT USED
+ADDH . . . . . . . . . . . . . . . .  D  ADDR  00F5H  NOT USED
+ADDL . . . . . . . . . . . . . . . .  D  ADDR  00F4H  NOT USED
+ANFANG . . . . . . . . . . . . . . .  C  ADDR  0055H
+AUXR . . . . . . . . . . . . . . . .  D  ADDR  008EH  NOT USED
+AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
+B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H  NOT USED
+BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
+BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
+CALCULATEMIDDLENEIGHBOURS. . . . . .  C  ADDR  011DH
+CALCULATENEIGHBOURS. . . . . . . . .  C  ADDR  00F9H
+CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
+CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
+CCAP1H . . . . . . . . . . . . . . .  D  ADDR  00FBH  NOT USED
+CCAP1L . . . . . . . . . . . . . . .  D  ADDR  00EBH  NOT USED
+CCAP2H . . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAP3H . . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAP4H . . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL2H. . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAPL2L. . . . . . . . . . . . . . .  D  ADDR  00ECH  NOT USED
+CCAPL3H. . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAPL3L. . . . . . . . . . . . . . .  D  ADDR  00EDH  NOT USED
+CCAPL4H. . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL4L. . . . . . . . . . . . . . .  D  ADDR  00EEH  NOT USED
+CCAPM0 . . . . . . . . . . . . . . .  D  ADDR  00DAH  NOT USED
+CCAPM1 . . . . . . . . . . . . . . .  D  ADDR  00DBH  NOT USED
+CCAPM2 . . . . . . . . . . . . . . .  D  ADDR  00DCH  NOT USED
+CCAPM3 . . . . . . . . . . . . . . .  D  ADDR  00DDH  NOT USED
+CCAPM4 . . . . . . . . . . . . . . .  D  ADDR  00DEH  NOT USED
+CCF0 . . . . . . . . . . . . . . . .  B  ADDR  00D8H  NOT USED
+CCF1 . . . . . . . . . . . . . . . .  B  ADDR  00D9H  NOT USED
+CCF2 . . . . . . . . . . . . . . . .  B  ADDR  00DAH  NOT USED
+CCF3 . . . . . . . . . . . . . . . .  B  ADDR  00DBH  NOT USED
+CCF4 . . . . . . . . . . . . . . . .  B  ADDR  00DCH  NOT USED
+CCON . . . . . . . . . . . . . . . .  D  ADDR  00D8H  NOT USED
+CFINT. . . . . . . . . . . . . . . .  C  ADDR  0033H  NOT USED
+CH . . . . . . . . . . . . . . . . .  D  ADDR  00F9H  NOT USED
+CHECKBOTTOM. . . . . . . . . . . . .  C  ADDR  00EBH
+CHECKCOLUMN. . . . . . . . . . . . .  C  ADDR  009BH
+CHECKEND . . . . . . . . . . . . . .  C  ADDR  00C8H
+CHECKLESSTHAN2 . . . . . . . . . . .  C  ADDR  00B8H
+CHECKMID . . . . . . . . . . . . . .  C  ADDR  00E6H
+CHECKMORETHAN2 . . . . . . . . . . .  C  ADDR  00BDH
+CHECKROW . . . . . . . . . . . . . .  C  ADDR  0097H
+CHECKTOP . . . . . . . . . . . . . .  C  ADDR  00DCH
+CKCON. . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKCON0 . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKRL . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+CKSEL. . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+CL . . . . . . . . . . . . . . . . .  D  ADDR  00E9H  NOT USED
+CLKREG . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CMOD . . . . . . . . . . . . . . . .  D  ADDR  00D9H  NOT USED
+CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
+CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
+CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
+CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
+DA . . . . . . . . . . . . . . . . .  C  ADDR  0063H
+DISPLAY. . . . . . . . . . . . . . .  C  ADDR  013DH
+DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
+DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
+DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+DP1L . . . . . . . . . . . . . . . .  D  ADDR  0084H  NOT USED
+DPH. . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
+DPL. . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
+EA . . . . . . . . . . . . . . . . .  B  ADDR  00AFH  NOT USED
+EC . . . . . . . . . . . . . . . . .  B  ADDR  00AEH  NOT USED
+EECON. . . . . . . . . . . . . . . .  D  ADDR  0096H  NOT USED
+ES . . . . . . . . . . . . . . . . .  B  ADDR  00ACH  NOT USED
+ET0. . . . . . . . . . . . . . . . .  B  ADDR  00A9H  NOT USED
+ET1. . . . . . . . . . . . . . . . .  B  ADDR  00ABH  NOT USED
+ET2. . . . . . . . . . . . . . . . .  B  ADDR  00ADH  NOT USED
+EX0. . . . . . . . . . . . . . . . .  B  ADDR  00A8H  NOT USED
+EX1. . . . . . . . . . . . . . . . .  B  ADDR  00AAH  NOT USED
+EXEN2. . . . . . . . . . . . . . . .  B  ADDR  00CBH  NOT USED
+EXF2 . . . . . . . . . . . . . . . .  B  ADDR  00CEH  NOT USED
+EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
+EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
+F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
+FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+GETBOTTOMROW . . . . . . . . . . . .  C  ADDR  00F4H
+GOTBOTTOMROW . . . . . . . . . . . .  C  ADDR  00F6H
+GOTTOPROW. . . . . . . . . . . . . .  C  ADDR  00E3H
+HUPE . . . . . . . . . . . . . . . .  C  ADDR  008EH  NOT USED
+IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H
+IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
+IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
+INIT . . . . . . . . . . . . . . . .  C  ADDR  0020H
+INT0 . . . . . . . . . . . . . . . .  B  ADDR  00B2H  NOT USED
+INT1 . . . . . . . . . . . . . . . .  B  ADDR  00B3H  NOT USED
+IP . . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPH. . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH0 . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH1 . . . . . . . . . . . . . . . .  D  ADDR  00B3H  NOT USED
+IPL0 . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPL1 . . . . . . . . . . . . . . . .  D  ADDR  00B2H  NOT USED
+IT0. . . . . . . . . . . . . . . . .  B  ADDR  0088H  NOT USED
+IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
+KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
+KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
+KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+NEIGHBOUR1NOTSET . . . . . . . . . .  C  ADDR  010EH
+NEIGHBOUR2NOTSET . . . . . . . . . .  C  ADDR  0114H
+NEIGHBOUR2NOTSET2. . . . . . . . . .  C  ADDR  0130H
+NEIGHBOUR3NOTSET . . . . . . . . . .  C  ADDR  011AH
+NEIGHBOUR3NOTSET2. . . . . . . . . .  C  ADDR  0136H
+NEW_GENERATION . . . . . . . . . . .  C  ADDR  0093H
+NURANZEIGE . . . . . . . . . . . . .  C  ADDR  008AH
+NURRT. . . . . . . . . . . . . . . .  C  ADDR  005BH
+OSCCON . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+OV . . . . . . . . . . . . . . . . .  B  ADDR  00D2H  NOT USED
+P. . . . . . . . . . . . . . . . . .  B  ADDR  00D0H  NOT USED
+P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H
+P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H
+P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
+P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
+P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
+P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H
+P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
+P4 . . . . . . . . . . . . . . . . .  D  ADDR  00C0H  NOT USED
+P4M1 . . . . . . . . . . . . . . . .  D  ADDR  00D6H  NOT USED
+P4M2 . . . . . . . . . . . . . . . .  D  ADDR  00E4H  NOT USED
+P5 . . . . . . . . . . . . . . . . .  D  ADDR  00E8H  NOT USED
+PC . . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PCON . . . . . . . . . . . . . . . .  D  ADDR  0087H  NOT USED
+PPCL . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PS . . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSL. . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSW. . . . . . . . . . . . . . . . .  D  ADDR  00D0H  NOT USED
+PT0. . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT0L . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT1. . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT1L . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT2. . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PT2L . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PX0. . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX0L . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX1. . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+PX1L . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+RB8. . . . . . . . . . . . . . . . .  B  ADDR  009AH  NOT USED
+RCAP2H . . . . . . . . . . . . . . .  D  ADDR  00CBH  NOT USED
+RCAP2L . . . . . . . . . . . . . . .  D  ADDR  00CAH  NOT USED
+RCLK . . . . . . . . . . . . . . . .  B  ADDR  00CDH  NOT USED
+RD . . . . . . . . . . . . . . . . .  B  ADDR  00B7H  NOT USED
+REN. . . . . . . . . . . . . . . . .  B  ADDR  009CH  NOT USED
+RESET. . . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
+RI . . . . . . . . . . . . . . . . .  B  ADDR  0098H  NOT USED
+ROTATERIGHT. . . . . . . . . . . . .  C  ADDR  0105H
+ROTATERIGHT2 . . . . . . . . . . . .  C  ADDR  0127H
+RS0. . . . . . . . . . . . . . . . .  B  ADDR  00D3H  NOT USED
+RS1. . . . . . . . . . . . . . . . .  B  ADDR  00D4H  NOT USED
+RT . . . . . . . . . . . . . . . . .  C  ADDR  0077H
+RXD. . . . . . . . . . . . . . . . .  B  ADDR  00B0H  NOT USED
+SADDR. . . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_0. . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_1. . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SADEN. . . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_0. . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
+SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
+SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
+SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
+SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED
+SM2. . . . . . . . . . . . . . . . .  B  ADDR  009DH  NOT USED
+SP . . . . . . . . . . . . . . . . .  D  ADDR  0081H  NOT USED
+SPCON. . . . . . . . . . . . . . . .  D  ADDR  00C3H  NOT USED
+SPCR . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
+SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
+STARTTIMER . . . . . . . . . . . . .  C  ADDR  006BH
+STOPTIMER. . . . . . . . . . . . . .  C  ADDR  0071H
+T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
+T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
+T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
+T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
+TABLE. . . . . . . . . . . . . . . .  C  ADDR  018FH
+TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
+TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
+TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
+TF0. . . . . . . . . . . . . . . . .  B  ADDR  008DH  NOT USED
+TF1. . . . . . . . . . . . . . . . .  B  ADDR  008FH  NOT USED
+TF2. . . . . . . . . . . . . . . . .  B  ADDR  00CFH  NOT USED
+TH0. . . . . . . . . . . . . . . . .  D  ADDR  008CH
+TH1. . . . . . . . . . . . . . . . .  D  ADDR  008DH  NOT USED
+TH2. . . . . . . . . . . . . . . . .  D  ADDR  00CDH  NOT USED
+TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
+TIMER. . . . . . . . . . . . . . . .  C  ADDR  0080H
+TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
+TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
+TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
+TL0. . . . . . . . . . . . . . . . .  D  ADDR  008AH
+TL1. . . . . . . . . . . . . . . . .  D  ADDR  008BH  NOT USED
+TL2. . . . . . . . . . . . . . . . .  D  ADDR  00CCH  NOT USED
+TMOD . . . . . . . . . . . . . . . .  D  ADDR  0089H
+TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH
+TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH  NOT USED
+TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
+TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
+WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED
+WR . . . . . . . . . . . . . . . . .  B  ADDR  00B6H  NOT USED
+ZEIGEN . . . . . . . . . . . . . . .  C  ADDR  0139H

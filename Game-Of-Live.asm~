@@ -59,7 +59,6 @@ movx @R0,A
 INC R0
 MOV A,#00000000b
 movx @R0,A
-call zeigen
 call new_generation
 call zeigen
 ;---------------------------

@@ -6,7 +6,7 @@
 ;
 ;---Fakten---
 ; Zeilen:
-; Dauer New_Generation: 14,026ms
+; Dauer New_Generation: 11,423ms
 
 ; -----------------
 ; Startpunkt
@@ -79,9 +79,11 @@ ret
 ;----------------------
 timer0Routine:
 push 00h		;Speichern von R0 auf dem Stack, damit dieser nach der Interrupt routine wieder zurück gesetzt werden kann
+push 01h		;Speichern von R1
 push ACC		;Das gleiche für den Akku
 call display		;Einmal das Spielfeld zeichnen
 pop ACC			;Rücksetzten von A aus dem Stack
+pop 01h
 pop 00h			;Das gleiche für R0
 ret
 
@@ -157,10 +159,10 @@ ret			;Fertig, kehre zur Hauptschleife "main" zurück
 ;----------------------
 checkTop:
 MOV A,R2		;Lade Zeilen Nr.
-MOV R5,#7;		;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfeld sphärisch ist
+MOV R0,#7;		;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfeld sphärisch ist
 JZ gotTopRow		;Falls Zeilen Nr. = 0 springe zu "gotTopRow" da keine weitere berechnung nötig
 DEC A;			;Falls nicht entspricht die Zeilen Nr. darüber der Nr. im Akku - 1
-MOV R5,A;		;Speichern der Zeilen Nr. in R5
+MOV R0,A;		;Speichern der Zeilen Nr. in R5
 
 gotTopRow:
 CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
@@ -168,76 +170,77 @@ ret			;Fertig
 
 checkMid:
 MOV A,R2;		;Lade Zeilen Nr.
-MOV R5,A;		;Speicher Zeilen Nr. in R5 zwischen
+MOV R0,A;		;Speicher Zeilen Nr. in R5 zwischen
 ACALL calculateMiddleNeighbours;Berechne die Nachbarn für die Mittlere Zeile (Eigene Zelle wird nicht addiert!)
 ret
 
 checkBottom:
 MOV A,R2;		;Lade Zeilen Nr.
-MOV R5,#0;		;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sphärisch ist
+MOV R0,#0;		;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sphärisch ist
 CJNE A,#7,getBottomRow
 JMP gotBottomrow	;Wenn die Zeilen Nr. = 7 muss nichts mehr getan werden
 getBottomRow:
 INC A;			;Wenn sie != 7 dann ist die untere Zeilen Nr. A - 1
-MOV R5,A;		;Speichern der Unteren Zeilen Nr. in R5
+MOV R0,A;		;Speichern der Unteren Zeilen Nr. in R5
 gotBottomRow:
 CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
 ret
 
 calculateNeighbours:
-MOV A,R5		;Laden der Zeilen Nr.
-MOV R0,A
-
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
+call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
-
-;MOV R6,#0		;Zurücksetzten von R6
 ret
 
 calculateMiddleNeighbours:
-MOV A,R5;
-MOV R0,A;
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
-
-;MOV R6,#0		;Zurücksetzten von R6
+call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 ret
 
 
 ;----------------------
 ; Logik zum ermitteln der Nachbarn Rechts, Links und in der selben Spalte einer Zelle
 ;----------------------
-checkLeftNeighbour:
+checkSideNeighbour:
 MOV A,R3		;Lade Spalten Nr. in R3
-call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
+MOVC A,@A+DPTR		;Lade Maske für die Spalte A
+ANL A,R6;		;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+JZ rightCheckDone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
+INC R7;			;Sonst: Erhöhen des Nachbarzählers
+rightcheckdone:
+
+MOV A,R3		;Lade Spalten Nr. in R3
+ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
+MOVC A,@A+DPTR		;Lade Maske für die Spalte A
+ANL A,R6;		;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+JZ leftCheckDone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
+INC R7;			;Sonst: Erhöhen des Nachbarzählers
+leftCheckDone:
+
 ret			;Fertig -> Rücksprung
 
 checkMiddleNeighbour:
 MOV A,R3		;Lade Spalten Nr. in R3
 INC A			;Erhöhe Spalten Nr. um eins um den mittleren Nachbarn auszumaskieren
-call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
-ret			;Fertig -> Rücksprung
-
-checkRightNeighbour:
-MOV A,R3		;Lade Spalten Nr. in R3
-ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
-call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
-ret			;Fertig -> Rücksprung
-
-incIfSet:
 MOVC A,@A+DPTR		;Lade Maske für die Spalte A
 ANL A,R6;		;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-JZ rightcheckdone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
+JZ middleCheckDone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
 INC R7;			;Sonst: Erhöhen des Nachbarzählers
-rightCheckDone:
+middleCheckDone:
+
 ret			;Fertig -> Rücksprung
+
+;incIfSet:
+;MOVC A,@A+DPTR		;Lade Maske für die Spalte A
+;ANL A,R6;		;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+;JZ rightcheckdone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
+;INC R7;			;Sonst: Erhöhen des Nachbarzählers
+;rightCheckDone:
+;ret			;Fertig -> Rücksprung
 
 ;----------------------
 ; Kopieren der neuen Generation auf die Speicherstellen welche welche gezeichnet werden
@@ -289,58 +292,31 @@ ret
 ; Zeichen der Speicher stelle 0h bis 7h auf die LED-Matrix
 ;----------------------
 display:
-mov 42,A
-
 mov R0,#0h
+mov R1,#00000001b
+call displayRow
+call displayRow
+call displayRow
+call displayRow
+call displayRow
+call displayRow
+call displayRow
+call displayRow
+ret
+
+;----------------------
+; Zeichen der Aktuellen Zeile
+;----------------------
+displayRow:
 movx A,@R0
-mov P3, #00000001b
+mov P3, R1
 mov P2, a
 mov P2,#0
 
 inc R0
-movx A,@R0
-mov P3, #00000010b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #00000100b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #00001000b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #00010000b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #00100000b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #01000000b
-mov P2, a
-mov P2,#0
-
-inc R0
-movx A,@R0
-mov P3, #10000000b
-mov P2, a
-mov P2,#0
-
-mov A,42
-
+MOV A,R1
+RL A
+MOV R1,A
 ret
 
 ; -----------------
@@ -387,3 +363,4 @@ table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 0000
 table2: db 00000001b, 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b, 10000000b
 
 end
+

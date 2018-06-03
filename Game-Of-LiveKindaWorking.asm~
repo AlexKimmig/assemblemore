@@ -75,9 +75,9 @@ ret
 ;----------------------
 timer0Routine:
 push 00h		;Speichern von R0 auf dem Stack, damit dieser nach der Interrupt routine wieder zurück gesetzt werden kann
-push A			;Das gleiche für den Akku
+push ACC		;Das gleiche für den Akku
 call display		;Einmal das Spielfeld zeichnen
-pop A			;Rücksetzten von A aus dem Stack
+pop ACC			;Rücksetzten von A aus dem Stack
 pop 00h			;Das gleiche für R0
 ret
 
@@ -191,7 +191,7 @@ call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
 call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
 call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
-MOV R6,#0		;Zurücksetzten von R6
+;MOV R6,#0		;Zurücksetzten von R6
 ret
 
 calculateMiddleNeighbours:
@@ -203,7 +203,7 @@ MOV R6,A		;Speichern der rotierten Zeile
 call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
 call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
-MOV R6,#0		;Zurücksetzten von R6
+;MOV R6,#0		;Zurücksetzten von R6
 ret
 
 
@@ -230,7 +230,7 @@ ret			;Fertig -> Rücksprung
 incIfSet:
 MOVC A,@A+DPTR		;Lade Maske für die Spalte A
 ANL A,R6;		;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-JZ rightCheckDone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
+JZ rightcheckdone	;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wird übersprungen
 INC R7;			;Sonst: Erhöhen des Nachbarzählers
 rightCheckDone:
 ret			;Fertig -> Rücksprung
@@ -344,35 +344,35 @@ ret
 ;------------------
 initCanvas:
 Mov R0,#0;
-MOV A,#00000000b	;Zeile 0
+MOV A, #00000000b	;Zeile 0
 movx @R0,A		;Speichern
 
 INC R0
-MOV A,#01111100b
+MOV A, #00000000b
 movx @R0,A
 
 INC R0
-MOV A,#10000100b
+MOV A, #00111000b
 movx @R0,A
 
 INC R0
-MOV A,#00000100b
+MOV A, #00100000b
 movx @R0,A
 
 INC R0
-MOV A,#10001000b
+MOV A, #00010000b
 movx @R0,A
 
 INC R0
-MOV A,#00100000b
+MOV A, #00000000b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
+MOV A, #00000000b
 movx @R0,A
 
 INC R0
-MOV A,#00000000b
+MOV A, #00000000b
 movx @R0,A
 ret
 

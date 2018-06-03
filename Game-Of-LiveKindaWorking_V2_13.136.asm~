@@ -6,7 +6,7 @@
 ;
 ;---Fakten---
 ; Zeilen:
-; Dauer New_Generation: 14,026ms
+; Dauer New_Generation: 13,136ms
 
 ; -----------------
 ; Startpunkt
@@ -191,9 +191,8 @@ MOV R0,A
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
+call checkSideNeighbours;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
 ;MOV R6,#0		;Zurücksetzten von R6
 ret
@@ -204,8 +203,7 @@ MOV R0,A;
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
+call checkSideNeighbours;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 
 ;MOV R6,#0		;Zurücksetzten von R6
 ret
@@ -214,20 +212,18 @@ ret
 ;----------------------
 ; Logik zum ermitteln der Nachbarn Rechts, Links und in der selben Spalte einer Zelle
 ;----------------------
-checkLeftNeighbour:
+checkSideNeighbours:
 MOV A,R3		;Lade Spalten Nr. in R3
+call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
+
+MOV A,R3		;Lade Spalten Nr. in R3
+ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
 call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
 ret			;Fertig -> Rücksprung
 
 checkMiddleNeighbour:
 MOV A,R3		;Lade Spalten Nr. in R3
 INC A			;Erhöhe Spalten Nr. um eins um den mittleren Nachbarn auszumaskieren
-call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
-ret			;Fertig -> Rücksprung
-
-checkRightNeighbour:
-MOV A,R3		;Lade Spalten Nr. in R3
-ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
 call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
 ret			;Fertig -> Rücksprung
 

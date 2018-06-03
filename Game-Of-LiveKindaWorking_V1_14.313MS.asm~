@@ -6,7 +6,7 @@
 ;
 ;---Fakten---
 ; Zeilen:
-; Dauer New_Generation: 14,026ms
+; Dauer New_Generation: 14,313ms
 
 ; -----------------
 ; Startpunkt
@@ -195,7 +195,7 @@ call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
 call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
 call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
-;MOV R6,#0		;Zurücksetzten von R6
+MOV R6,#0		;Zurücksetzten von R6
 ret
 
 calculateMiddleNeighbours:
@@ -207,7 +207,7 @@ MOV R6,A		;Speichern der rotierten Zeile
 call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
 call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
-;MOV R6,#0		;Zurücksetzten von R6
+MOV R6,#0		;Zurücksetzten von R6
 ret
 
 

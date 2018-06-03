@@ -6,7 +6,7 @@
 ;
 ;---Fakten---
 ; Zeilen:
-; Dauer New_Generation: 14,026ms
+; Dauer New_Generation: 12,779ms
 
 ; -----------------
 ; Startpunkt
@@ -157,10 +157,10 @@ ret			;Fertig, kehre zur Hauptschleife "main" zurück
 ;----------------------
 checkTop:
 MOV A,R2		;Lade Zeilen Nr.
-MOV R5,#7;		;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfeld sphärisch ist
+MOV R0,#7;		;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfeld sphärisch ist
 JZ gotTopRow		;Falls Zeilen Nr. = 0 springe zu "gotTopRow" da keine weitere berechnung nötig
 DEC A;			;Falls nicht entspricht die Zeilen Nr. darüber der Nr. im Akku - 1
-MOV R5,A;		;Speichern der Zeilen Nr. in R5
+MOV R0,A;		;Speichern der Zeilen Nr. in R5
 
 gotTopRow:
 CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
@@ -168,44 +168,42 @@ ret			;Fertig
 
 checkMid:
 MOV A,R2;		;Lade Zeilen Nr.
-MOV R5,A;		;Speicher Zeilen Nr. in R5 zwischen
+MOV R0,A;		;Speicher Zeilen Nr. in R5 zwischen
 ACALL calculateMiddleNeighbours;Berechne die Nachbarn für die Mittlere Zeile (Eigene Zelle wird nicht addiert!)
 ret
 
 checkBottom:
 MOV A,R2;		;Lade Zeilen Nr.
-MOV R5,#0;		;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sphärisch ist
+MOV R0,#0;		;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sphärisch ist
 CJNE A,#7,getBottomRow
 JMP gotBottomrow	;Wenn die Zeilen Nr. = 7 muss nichts mehr getan werden
 getBottomRow:
 INC A;			;Wenn sie != 7 dann ist die untere Zeilen Nr. A - 1
-MOV R5,A;		;Speichern der Unteren Zeilen Nr. in R5
+MOV R0,A;		;Speichern der Unteren Zeilen Nr. in R5
 gotBottomRow:
 CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
 ret
 
 calculateNeighbours:
-MOV A,R5		;Laden der Zeilen Nr.
-MOV R0,A
+;MOV A,R5		;Laden der Zeilen Nr.
+;MOV R0,A
 
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
+call checkSideNeighbours;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
 
 ;MOV R6,#0		;Zurücksetzten von R6
 ret
 
 calculateMiddleNeighbours:
-MOV A,R5;
-MOV R0,A;
+;MOV A,R5;
+;MOV R0,A;
 MOVX A,@R0;		;Laden der entsprechenden Zeile
 MOV R6,A		;Speichern der rotierten Zeile
 
-call checkLeftNeighbour;Ermitteln ob linker Nachbar gesetzt ist
-call checkRightNeighbour;Ermitteln ob rechter Nachbar gesetzt ist
+call checkSideNeighbours;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
 
 ;MOV R6,#0		;Zurücksetzten von R6
 ret
@@ -214,20 +212,18 @@ ret
 ;----------------------
 ; Logik zum ermitteln der Nachbarn Rechts, Links und in der selben Spalte einer Zelle
 ;----------------------
-checkLeftNeighbour:
+checkSideNeighbours:
 MOV A,R3		;Lade Spalten Nr. in R3
+call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
+
+MOV A,R3		;Lade Spalten Nr. in R3
+ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
 call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
 ret			;Fertig -> Rücksprung
 
 checkMiddleNeighbour:
 MOV A,R3		;Lade Spalten Nr. in R3
 INC A			;Erhöhe Spalten Nr. um eins um den mittleren Nachbarn auszumaskieren
-call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
-ret			;Fertig -> Rücksprung
-
-checkRightNeighbour:
-MOV A,R3		;Lade Spalten Nr. in R3
-ADD A,#2		;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
 call incIfSet		;Wenn die Spalte A der Zeile gesetzt ist wird R7 erhöht
 ret			;Fertig -> Rücksprung
 

@@ -38,335 +38,333 @@ Game-Of-LiveKindaWorking_V2                                                     
                         36     ;------------------
                         37     ORG 50h
                         38     init:
-0050 75A88A             39     mov IE, #10001010b      ;Setze EA, ET0, ET1 um die Timer einzustellen
-0053 758911             40     mov tmod, #00010001b    ;Setze timer modus für T0 und T1 auf 16Bit
-                        41
-0056 120075             42     call setTimer0          ;Setze Startwerte für T0
-0059 D28C               43     SETB TR0                ;Starte T0
-005B 12007E             44     call setTimer1          ;Setze Startwerte für T1
-005E D28E               45     SETB TR1                ;Starte T1
-                        46
-0060 120183             47     call initCanvas
-0063 120159             48     call display
-                        49
-0066 120069             50     call main
-                        51
-                        52     ;------------------
-                        53     ;main (loop)
-                        54     ;------------------
-                        55     main:
-0069 E528               56     MOV A,40                ;Lade byte welches von T1 gesetzt wird in Akku
-006B 60FC               57     JZ main                 ;Wenn es null versuche es nochmal
-006D 752800             58     MOV 40,#0               ;Sonst setze es auf null...
-0070 120097             59     call NEW_GENERATION     ;...und berechne die neue Generation
-0073 80F4               60     jmp main                ;Danach wieder von vorne
-                        61
-                        62     ;------------------
-                        63     ;Rücksetzten der Timer
-                        64     ;------------------
-                        65     setTimer0:
-0075 758A00             66     mov tl0, #000h          ;Setzen des niederwertigen start bytes von T0
-0078 758CFD             67     mov th0, #0fdh          ;Setzen des höherwertigen start bytes von T0
-007B D28C               68     SETB TR0                ;Starte Timer 0
-007D 22                 69     ret
-                        70
-                        71     setTimer1:
-007E 758B68             72     mov tl1, #068h          ;Setzen des niederwertigen start bytes von T1
-0081 758DC5             73     mov th1, #0C5h          ;Setzen des höherwertigen start bytes von T1
-0084 D28E               74     SETB TR1                ;Starte Timer 1
-0086 22                 75     ret
-                        76
-                        77     ;----------------------
-                        78     ; timer0 inerrupt routine
-                        79     ;----------------------
-                        80     timer0Routine:
-0087 C000               81     push 00h                ;Speichern von R0 auf dem Stack, damit dieser nach der Interrupt routine wied
-0089 C001               82     push 01h                ;Speichern von R1
-008B C0E0               83     push ACC                ;Das gleiche für den Akku
-008D 120159             84     call display            ;Einmal das Spielfeld zeichnen
-0090 D0E0               85     pop ACC                 ;Rücksetzten von A aus dem Stack
-0092 D001               86     pop 01h
-0094 D000               87     pop 00h                 ;Das gleiche für R0
-0096 22                 88     ret
-                        89
-                        90     ;----------------------
-                        91     ; Logik für die neue Generation
-                        92     ;----------------------
-                        93     new_generation:
-0097 7A00               94     MOV R2,#0               ;Zeilen Zähler (0-7)
-                        95
-                        96     checkrow:               ;Iteriert durch alle Zeilen
-0099 7B00               97     MOV R3,#0               ;Spalten Zähler (0-7)
-009B 7C00               98     MOV R4,#0               ;R4 ist ein Zwischenspeicher für die neue Zeile
-009D 7900               99     MOV R1,#0               ;TODO
-                       100
-                       101     checkcolumn:            ;Iteriert durch alle Spalten
-009F 7F00              102     MOV R7,#0               ;Zurücksetzen von R7 (Speichert die anzahl an Nachbarn einer Zelle zwischen)
-00A1 9001AD            103     mov DPTR,#table2        ;Laden der Masken für die Nachbar-Checks
-00A4 11E3              104     ACALL checkTop          ;Überprüfen wie viele Nachbarn in der Zeile oberhalb der Zelle sind
-00A6 11EE              105     ACALL checkMid          ;Überprüfen wie viele Nachbarn in der Zeile der Zelle sind
-00A8 11F3              106     ACALL checkBottom       ;Überprüfen wie viele Nachbarn in der Zeile unterhalb der Zelle sind
-                       107
-00AA 9001A5            108     mov DPTR,#table         ;Setze DataPointer auf masken tabelle für das hinzufügen der neuen Zelle
-00AD EB                109     mov A,R3                ;Lade die aktuelle Spaltennummer
-00AE 93                110     movC A,@A+DPTR          ;Hole Maske dass nur die Spalte gesetzt wird (z.B. Maske Spalte 0: #10000000b
-00AF FE                111     mov R6,A;               ;Zwischenspeichern des Maske in R6
-                       112
-00B0 EA                113     MOV A,R2;               ;Kopiere aktuelle Zeile der Zelle in R0
-00B1 F8                114     MOV R0,A;
-00B2 E2                115     MOVX A,@R0;             ;Lade Zeileninhalt aus Speicher
-00B3 FD                116     MOV R5,A;               ;Zwischenspeichern der Zeile in R5
-                       117
-00B4 EF                118     MOV A,R7;               ;Hole die Anzahl an Nachbarn in den Akku zum vergleichen
-00B5 B40207            119     CJNE A,#2,checkUnderPopulation;Überprüfe ob es zwei Nachbarn sind, wenn nicht dann ob mehr oder wenig
-00B8 EE                120     MOV A,R6                ;Wenn A = 2 -> Behalte Wert der Zelle bei und lade die in R6 zwischengespeich
-00B9 5D                121     ANL A,R5                ;Maskiere Wert der Zelle aus
-00BA 49                122     ORL A,R1                ;Und füge ihn zur neuen Zeile hinzu
-00BB F9                123     MOV R1,A                ;Speichere den Wert der aktualisierten, neuen Zeile zwischen
-00BC 0200CF            124     JMP checkEnd            ;Die Überprüfung der Zelle ist zu Ende
-                       125
-                       126     checkUnderPopulation:   ;Überprüfe ob eine Unterpopulation vorliegt und die Zelle an Einsamkeit stirb
-00BF 5003              127     JNC checkPerfectPopulation;Wenn A > 2, dann wurde das Carry bit durch CJNE auf 0 gesetzt -> Sprung zu
-00C1 0200CF            128     JMP checkEnd            ;Sonst war es eine Unterpopulation und die Zelle stirbt (Wird nicht gesetzt)
-                       129
-                       130     checkPerfectPopulation: ;Überprüfe ob es genau 3 Nachbarn gibt und die Zelle reanimiert wird
-00C4 B40308            131     CJNE A,#3,checkEnd      ;Wenn A != 3 können es jetzt nur noch mehr sein -> Zelle stirbt (wird nicht g
-00C7 EE                132     MOV A,R6                ;Lade die in R6 gespeicherte Maske
-00C8 54FF              133     ANL A,#11111111b        ;Setze die Zelle durch die Maske an der entsprechenden Stelle auf 1
-00CA 49                134     ORL A,R1                ;Berechne neue Zeile
-00CB F9                135     MOV R1,A                ;Füge Wert zur neuen Zeile hinzu
-00CC 0200CF            136     JMP checkEnd            ;Die Überprüfung endet hier
-                       137
-                       138     checkEnd:               ;Sprungpunkt wenn die Überprüfungen enden
-00CF 0B                139     INC R3                  ;Die Nächste Spalte wird betrachtet
-00D0 EB                140     MOV A,R3                ;Lade Spalten Nr. in Akku zum Vergleichen
-00D1 B408CB            141     CJNE A,#8,checkcolumn   ;Wenn die Spalten Nr. 8 entspricht wurde die komplette Zeile bearbeitet und e
-                       142
+0050 120183             39     call initCanvas
+                        40
+0053 75A88A             41     mov IE, #10001010b      ;Setze EA, ET0, ET1 um die Timer einzustellen
+0056 758911             42     mov tmod, #00010001b    ;Setze timer modus für T0 und T1 auf 16Bit
+                        43
+0059 120075             44     call setTimer0          ;Setze Startwerte für T0
+005C D28C               45     SETB TR0                ;Starte T0
+005E 12007E             46     call setTimer1          ;Setze Startwerte für T1
+0061 D28E               47     SETB TR1                ;Starte T1
+                        48
+0063 120159             49     call display
+                        50
+0066 120069             51     call main
+                        52
+                        53     ;------------------
+                        54     ;main (loop)
+                        55     ;------------------
+                        56     main:
+0069 E528               57     MOV A,40                ;Lade byte welches von T1 gesetzt wird in Akku
+006B 60FC               58     JZ main                 ;Wenn es null versuche es nochmal
+006D 752800             59     MOV 40,#0               ;Sonst setze es auf null...
+0070 120097             60     call NEW_GENERATION     ;...und berechne die neue Generation
+0073 80F4               61     jmp main                ;Danach wieder von vorne
+                        62
+                        63     ;------------------
+                        64     ;Rücksetzten der Timer
+                        65     ;------------------
+                        66     setTimer0:
+0075 758A00             67     mov tl0, #000h          ;Setzen des niederwertigen start bytes von T0
+0078 758CFD             68     mov th0, #0fdh          ;Setzen des höherwertigen start bytes von T0
+007B D28C               69     SETB TR0                ;Starte Timer 0
+007D 22                 70     ret
+                        71
+                        72     setTimer1:
+007E 758B68             73     mov tl1, #068h          ;Setzen des niederwertigen start bytes von T1
+0081 758DC5             74     mov th1, #0C5h          ;Setzen des höherwertigen start bytes von T1
+0084 D28E               75     SETB TR1                ;Starte Timer 1
+0086 22                 76     ret
+                        77
+                        78     ;----------------------
+                        79     ; timer0 inerrupt routine
+                        80     ;----------------------
+                        81     timer0Routine:
+0087 C000               82     push 00h                ;Speichern von R0 auf dem Stack, damit dieser nach der Interrupt routine wied
+0089 C001               83     push 01h                ;Speichern von R1
+008B C0E0               84     push ACC                ;Das gleiche für den Akku
+008D 120159             85     call display            ;Einmal das Spielfeld zeichnen
+0090 D0E0               86     pop ACC                 ;Rücksetzten von A aus dem Stack
+0092 D001               87     pop 01h
+0094 D000               88     pop 00h                 ;Das gleiche für R0
+0096 22                 89     ret
+                        90
+                        91     ;----------------------
+                        92     ; Logik für die neue Generation
+                        93     ;----------------------
+                        94     new_generation:
+0097 7A00               95     MOV R2,#0               ;Zeilen Zähler (0-7)
+                        96
+                        97     checkrow:               ;Iteriert durch alle Zeilen
+0099 7B00               98     MOV R3,#0               ;Spalten Zähler (0-7)
+009B 7C00               99     MOV R4,#0               ;R4 ist ein Zwischenspeicher für die neue Zeile
+009D 7900              100     MOV R1,#0               ;TODO
+                       101
+                       102     checkcolumn:            ;Iteriert durch alle Spalten
+009F 7F00              103     MOV R7,#0               ;Zurücksetzen von R7 (Speichert die anzahl an Nachbarn einer Zelle zwischen)
+00A1 9001AF            104     mov DPTR,#table2        ;Laden der Masken für die Nachbar-Checks
+00A4 11E3              105     ACALL checkTop          ;Überprüfen wie viele Nachbarn in der Zeile oberhalb der Zelle sind
+00A6 11EE              106     ACALL checkMid          ;Überprüfen wie viele Nachbarn in der Zeile der Zelle sind
+00A8 11F3              107     ACALL checkBottom       ;Überprüfen wie viele Nachbarn in der Zeile unterhalb der Zelle sind
+                       108
+00AA 9001A7            109     mov DPTR,#table         ;Setze DataPointer auf masken tabelle für das hinzufügen der neuen Zelle
+00AD EB                110     mov A,R3                ;Lade die aktuelle Spaltennummer
+00AE 93                111     movC A,@A+DPTR          ;Hole Maske dass nur die Spalte gesetzt wird (z.B. Maske Spalte 0: #10000000b
+00AF FE                112     mov R6,A;               ;Zwischenspeichern des Maske in R6
+                       113
+00B0 EA                114     MOV A,R2;               ;Kopiere aktuelle Zeile der Zelle in R0
+00B1 F8                115     MOV R0,A;
+00B2 E2                116     MOVX A,@R0;             ;Lade Zeileninhalt aus Speicher
+00B3 FD                117     MOV R5,A;               ;Zwischenspeichern der Zeile in R5
+                       118
+00B4 EF                119     MOV A,R7;               ;Hole die Anzahl an Nachbarn in den Akku zum vergleichen
+00B5 B40207            120     CJNE A,#2,checkUnderPopulation;Überprüfe ob es zwei Nachbarn sind, wenn nicht dann ob mehr oder wenig
+00B8 EE                121     MOV A,R6                ;Wenn A = 2 -> Behalte Wert der Zelle bei und lade die in R6 zwischengespeich
+00B9 5D                122     ANL A,R5                ;Maskiere Wert der Zelle aus
+00BA 49                123     ORL A,R1                ;Und füge ihn zur neuen Zeile hinzu
+00BB F9                124     MOV R1,A                ;Speichere den Wert der aktualisierten, neuen Zeile zwischen
+00BC 0200CF            125     JMP checkEnd            ;Die Überprüfung der Zelle ist zu Ende
+                       126
+                       127     checkUnderPopulation:   ;Überprüfe ob eine Unterpopulation vorliegt und die Zelle an Einsamkeit stirb
+00BF 5003              128     JNC checkPerfectPopulation;Wenn A > 2, dann wurde das Carry bit durch CJNE auf 0 gesetzt -> Sprung zu
+00C1 0200CF            129     JMP checkEnd            ;Sonst war es eine Unterpopulation und die Zelle stirbt (Wird nicht gesetzt)
+                       130
+                       131     checkPerfectPopulation: ;Überprüfe ob es genau 3 Nachbarn gibt und die Zelle reanimiert wird
+00C4 B40308            132     CJNE A,#3,checkEnd      ;Wenn A != 3 können es jetzt nur noch mehr sein -> Zelle stirbt (wird nicht g
+00C7 EE                133     MOV A,R6                ;Lade die in R6 gespeicherte Maske
+00C8 54FF              134     ANL A,#11111111b        ;Setze die Zelle durch die Maske an der entsprechenden Stelle auf 1
+00CA 49                135     ORL A,R1                ;Berechne neue Zeile
+00CB F9                136     MOV R1,A                ;Füge Wert zur neuen Zeile hinzu
+00CC 0200CF            137     JMP checkEnd            ;Die Überprüfung endet hier
+                       138
+                       139     checkEnd:               ;Sprungpunkt wenn die Überprüfungen enden
+00CF 0B                140     INC R3                  ;Die Nächste Spalte wird betrachtet
+00D0 EB                141     MOV A,R3                ;Lade Spalten Nr. in Akku zum Vergleichen
+00D1 B408CB            142     CJNE A,#8,checkcolumn   ;Wenn die Spalten Nr. 8 entspricht wurde die komplette Zeile bearbeitet und e
                        143
-00D4 EA                144     MOV A,R2;               ;Stattdessen wird der Zeilenzähler zum Vergleichen in den Akku geladen
-00D5 2464              145     ADD A,#100;             ;Und es wird 100 dazu addiert (Um sicherzugehen dass keine schon belegte Spei
-00D7 F8                146     MOV R0,A;               ;Die Speicherstellen Adresse wird in R0 geschrieben
-00D8 E9                147     MOV A,R1;               ;Und der zu speichernde Inhalt (die neue Zeile) in den Akku kopiert
-00D9 F2                148     MOVX @R0,A;             ;Anschließend wird die Zeile in den Speicher geschreiben
-                       149
-00DA 0A                150     INC R2                  ;Die Zeilen Nr. um ein erhöht
-00DB EA                151     MOV A,R2                ;und zu Vergleichszwecken un den Akku geschrieben
-00DC B408BA            152     CJNE A,#8,checkrow      ;Wenn die Zeilen Nr. 8 entspricht wurden alle Zeilen bearbeitet und die neue
-                       153
-00DF 120128            154     call copyNewGenerationToField;Die neue Generation wird nun vom Zwischenspeicher auf das richtige Feld
-00E2 22                155     ret                     ;Fertig, kehre zur Hauptschleife "main" zurück
-                       156
-                       157     ;----------------------
-                       158     ; Logik zum ermitteln der Anzahl an Nachbarn in der selben Zeile, der oberhalb und der unterhalb der
-                       159     ;----------------------
-                       160     checkTop:
-00E3 EA                161     MOV A,R2                ;Lade Zeilen Nr.
-00E4 7807              162     MOV R0,#7;              ;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfel
-00E6 6002              163     JZ gotTopRow            ;Falls Zeilen Nr. = 0 springe zu "gotTopRow" da keine weitere berechnung nö
-00E8 14                164     DEC A;                  ;Falls nicht entspricht die Zeilen Nr. darüber der Nr. im Akku - 1
-00E9 F8                165     MOV R0,A;               ;Speichern der Zeilen Nr. in R5
-                       166
-                       167     gotTopRow:
-00EA 120102            168     CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
-00ED 22                169     ret                     ;Fertig
-                       170
-                       171     checkMid:
-00EE EA                172     MOV A,R2;               ;Lade Zeilen Nr.
-00EF F8                173     MOV R0,A;               ;Speicher Zeilen Nr. in R5 zwischen
-00F0 310B              174     ACALL calculateMiddleNeighbours;Berechne die Nachbarn für die Mittlere Zeile (Eigene Zelle wird nicht
-00F2 22                175     ret
-                       176
-                       177     checkBottom:
-00F3 EA                178     MOV A,R2;               ;Lade Zeilen Nr.
-00F4 7800              179     MOV R0,#0;              ;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sph
-00F6 B40703            180     CJNE A,#7,getBottomRow
-00F9 0200FE            181     JMP gotBottomrow        ;Wenn die Zeilen Nr. = 7 muss nichts mehr getan werden
-                       182     getBottomRow:
-00FC 04                183     INC A;                  ;Wenn sie != 7 dann ist die untere Zeilen Nr. A - 1
-00FD F8                184     MOV R0,A;               ;Speichern der Unteren Zeilen Nr. in R5
-                       185     gotBottomRow:
-00FE 120102            186     CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
-0101 22                187     ret
-                       188
-                       189     calculateNeighbours:
-0102 E2                190     MOVX A,@R0;             ;Laden der entsprechenden Zeile
-0103 FE                191     MOV R6,A                ;Speichern der rotierten Zeile
-                       192
-0104 120111            193     call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
-0107 120120            194     call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
-010A 22                195     ret
-                       196
-                       197     calculateMiddleNeighbours:
-010B E2                198     MOVX A,@R0;             ;Laden der entsprechenden Zeile
-010C FE                199     MOV R6,A                ;Speichern der rotierten Zeile
-                       200
-010D 120111            201     call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
-0110 22                202     ret
-                       203
+                       144
+00D4 EA                145     MOV A,R2;               ;Stattdessen wird der Zeilenzähler zum Vergleichen in den Akku geladen
+00D5 2464              146     ADD A,#100;             ;Und es wird 100 dazu addiert (Um sicherzugehen dass keine schon belegte Spei
+00D7 F8                147     MOV R0,A;               ;Die Speicherstellen Adresse wird in R0 geschrieben
+00D8 E9                148     MOV A,R1;               ;Und der zu speichernde Inhalt (die neue Zeile) in den Akku kopiert
+00D9 F2                149     MOVX @R0,A;             ;Anschließend wird die Zeile in den Speicher geschreiben
+                       150
+00DA 0A                151     INC R2                  ;Die Zeilen Nr. um ein erhöht
+00DB EA                152     MOV A,R2                ;und zu Vergleichszwecken un den Akku geschrieben
+00DC B408BA            153     CJNE A,#8,checkrow      ;Wenn die Zeilen Nr. 8 entspricht wurden alle Zeilen bearbeitet und die neue
+                       154
+00DF 120128            155     call copyNewGenerationToField;Die neue Generation wird nun vom Zwischenspeicher auf das richtige Feld
+00E2 22                156     ret                     ;Fertig, kehre zur Hauptschleife "main" zurück
+                       157
+                       158     ;----------------------
+                       159     ; Logik zum ermitteln der Anzahl an Nachbarn in der selben Zeile, der oberhalb und der unterhalb der
+                       160     ;----------------------
+                       161     checkTop:
+00E3 EA                162     MOV A,R2                ;Lade Zeilen Nr.
+00E4 7807              163     MOV R0,#7;              ;Wenn Zeilen Nr. = 0 ist die unterstee Zeile die "darüber", da das Spielfel
+00E6 6002              164     JZ gotTopRow            ;Falls Zeilen Nr. = 0 springe zu "gotTopRow" da keine weitere berechnung nö
+00E8 14                165     DEC A;                  ;Falls nicht entspricht die Zeilen Nr. darüber der Nr. im Akku - 1
+00E9 F8                166     MOV R0,A;               ;Speichern der Zeilen Nr. in R5
+                       167
+                       168     gotTopRow:
+00EA 120102            169     CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
+00ED 22                170     ret                     ;Fertig
+                       171
+                       172     checkMid:
+00EE EA                173     MOV A,R2;               ;Lade Zeilen Nr.
+00EF F8                174     MOV R0,A;               ;Speicher Zeilen Nr. in R5 zwischen
+00F0 310B              175     ACALL calculateMiddleNeighbours;Berechne die Nachbarn für die Mittlere Zeile (Eigene Zelle wird nicht
+00F2 22                176     ret
+                       177
+                       178     checkBottom:
+00F3 EA                179     MOV A,R2;               ;Lade Zeilen Nr.
+00F4 7800              180     MOV R0,#0;              ;Wenn Zeilen Nr. = 7 ist die oberste Zeile die darunter, da das Spielfeld sph
+00F6 B40703            181     CJNE A,#7,getBottomRow
+00F9 0200FE            182     JMP gotBottomrow        ;Wenn die Zeilen Nr. = 7 muss nichts mehr getan werden
+                       183     getBottomRow:
+00FC 04                184     INC A;                  ;Wenn sie != 7 dann ist die untere Zeilen Nr. A - 1
+00FD F8                185     MOV R0,A;               ;Speichern der Unteren Zeilen Nr. in R5
+                       186     gotBottomRow:
+00FE 120102            187     CALL calculateNeighbours;Berechne die Nachbarn für die Zeile
+0101 22                188     ret
+                       189
+                       190     calculateNeighbours:
+0102 E2                191     MOVX A,@R0;             ;Laden der entsprechenden Zeile
+0103 FE                192     MOV R6,A                ;Speichern der rotierten Zeile
+                       193
+0104 120111            194     call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
+0107 120120            195     call checkMiddleNeighbour;Ermitteln ob mittlerer Nachbar gesetzt ist
+010A 22                196     ret
+                       197
+                       198     calculateMiddleNeighbours:
+010B E2                199     MOVX A,@R0;             ;Laden der entsprechenden Zeile
+010C FE                200     MOV R6,A                ;Speichern der rotierten Zeile
+                       201
+010D 120111            202     call checkSideNeighbour;Ermitteln ob die Seitlichen Nachbarn gesetzt sind
+0110 22                203     ret
                        204
-                       205     ;----------------------
-                       206     ; Logik zum ermitteln der Nachbarn Rechts, Links und in der selben Spalte einer Zelle
-                       207     ;----------------------
-                       208     checkSideNeighbour:
-0111 EB                209     MOV A,R3                ;Lade Spalten Nr. in R3
-0112 93                210     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
-0113 5E                211     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-0114 6001              212     JZ rightCheckDone       ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
-0116 0F                213     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
-                       214     rightcheckdone:
-                       215
-0117 EB                216     MOV A,R3                ;Lade Spalten Nr. in R3
-0118 2402              217     ADD A,#2                ;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
-011A 93                218     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
-011B 5E                219     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-011C 6001              220     JZ leftCheckDone        ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
-011E 0F                221     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
-                       222     leftCheckDone:
-                       223
-011F 22                224     ret                     ;Fertig -> Rücksprung
-                       225
-                       226     checkMiddleNeighbour:
-0120 EB                227     MOV A,R3                ;Lade Spalten Nr. in R3
-0121 04                228     INC A                   ;Erhöhe Spalten Nr. um eins um den mittleren Nachbarn auszumaskieren
-0122 93                229     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
-0123 5E                230     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-0124 6001              231     JZ middleCheckDone      ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
-0126 0F                232     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
-                       233     middleCheckDone:
-                       234
-0127 22                235     ret                     ;Fertig -> Rücksprung
-                       236
-                       237     ;incIfSet:
-                       238     ;MOVC A,@A+DPTR         ;Lade Maske für die Spalte A
-                       239     ;ANL A,R6;              ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
-                       240     ;JZ rightcheckdone      ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
-                       241     ;INC R7;                        ;Sonst: Erhöhen des Nachbarzählers
-                       242     ;rightCheckDone:
-                       243     ;ret                    ;Fertig -> Rücksprung
-                       244
-                       245     ;----------------------
-                       246     ; Kopieren der neuen Generation auf die Speicherstellen welche welche gezeichnet werden
-                       247     ;----------------------
-                       248     copyNewGenerationToField:
-0128 7864              249     MOV R0,#100
-012A 7900              250     MOV R1,#0
-012C E2                251     MOVX A,@R0
-012D F3                252     MOVX @R1,A
-                       253
-012E 7865              254     MOV R0,#101
-0130 7901              255     MOV R1,#1
-0132 E2                256     MOVX A,@R0
-0133 F3                257     MOVX @R1,A
-                       258
-0134 7866              259     MOV R0,#102
-0136 7902              260     MOV R1,#2
-0138 E2                261     MOVX A,@R0
-0139 F3                262     MOVX @R1,A
-                       263
-013A 7867              264     MOV R0,#103
-013C 7903              265     MOV R1,#3
-013E E2                266     MOVX A,@R0
-013F F3                267     MOVX @R1,A
-                       268
-0140 7868              269     MOV R0,#104
-0142 7904              270     MOV R1,#4
-0144 E2                271     MOVX A,@R0
-0145 F3                272     MOVX @R1,A
-                       273
-0146 7869              274     MOV R0,#105
-0148 7905              275     MOV R1,#5
-014A E2                276     MOVX A,@R0
-014B F3                277     MOVX @R1,A
-                       278
-014C 786A              279     MOV R0,#106
-014E 7906              280     MOV R1,#6
-0150 E2                281     MOVX A,@R0
-0151 F3                282     MOVX @R1,A
-                       283
-0152 786B              284     MOV R0,#107
-0154 7907              285     MOV R1,#7
-0156 E2                286     MOVX A,@R0
-0157 F3                287     MOVX @R1,A
-                       288
-0158 22                289     ret
-                       290
-                       291     ;----------------------
-                       292     ; Zeichen der Speicher stelle 0h bis 7h auf die LED-Matrix
-                       293     ;----------------------
-                       294     display:
-0159 7800              295     mov R0,#0h
-015B 7901              296     mov R1,#00000001b
-015D 120176            297     call displayRow
-0160 120176            298     call displayRow
-0163 120176            299     call displayRow
-0166 120176            300     call displayRow
-0169 120176            301     call displayRow
-016C 120176            302     call displayRow
-016F 120176            303     call displayRow
-0172 120176            304     call displayRow
-0175 22                305     ret
-                       306
-                       307     ;----------------------
-                       308     ; Zeichen der Aktuellen Zeile
-                       309     ;----------------------
-                       310     displayRow:
-0176 E2                311     movx A,@R0
-0177 89B0              312     mov P3, R1
-0179 F5A0              313     mov P2, a
-017B 75A000            314     mov P2,#0
-                       315
-017E 08                316     inc R0
-017F E9                317     MOV A,R1
-0180 23                318     RL A
-0181 F9                319     MOV R1,A
-0182 22                320     ret
-                       321
-                       322     ; -----------------
-                       323     ; Initialisieren der Zeichenfläche
-                       324     ;------------------
-                       325     initCanvas:
-0183 7800              326     Mov R0,#0;
-0185 7400              327     MOV A, #00000000b       ;Zeile 0
-0187 F2                328     movx @R0,A              ;Speichern
+                       205
+                       206     ;----------------------
+                       207     ; Logik zum ermitteln der Nachbarn Rechts, Links und in der selben Spalte einer Zelle
+                       208     ;----------------------
+                       209     checkSideNeighbour:
+0111 EB                210     MOV A,R3                ;Lade Spalten Nr. in R3
+0112 93                211     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
+0113 5E                212     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+0114 6001              213     JZ rightCheckDone       ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
+0116 0F                214     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
+                       215     rightcheckdone:
+                       216
+0117 EB                217     MOV A,R3                ;Lade Spalten Nr. in R3
+0118 2402              218     ADD A,#2                ;Erhöhe Spalten Nr. um zwei um den rechten Nachbarn auszumaskieren
+011A 93                219     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
+011B 5E                220     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+011C 6001              221     JZ leftCheckDone        ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
+011E 0F                222     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
+                       223     leftCheckDone:
+                       224
+011F 22                225     ret                     ;Fertig -> Rücksprung
+                       226
+                       227     checkMiddleNeighbour:
+0120 EB                228     MOV A,R3                ;Lade Spalten Nr. in R3
+0121 04                229     INC A                   ;Erhöhe Spalten Nr. um eins um den mittleren Nachbarn auszumaskieren
+0122 93                230     MOVC A,@A+DPTR          ;Lade Maske für die Spalte A
+0123 5E                231     ANL A,R6;               ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+0124 6001              232     JZ middleCheckDone      ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
+0126 0F                233     INC R7;                 ;Sonst: Erhöhen des Nachbarzählers
+                       234     middleCheckDone:
+                       235
+0127 22                236     ret                     ;Fertig -> Rücksprung
+                       237
+                       238     ;incIfSet:
+                       239     ;MOVC A,@A+DPTR         ;Lade Maske für die Spalte A
+                       240     ;ANL A,R6;              ;Ermittel den Zustand der Spalte mithilfe der Zeile R6
+                       241     ;JZ rightcheckdone      ;Wenn A = 0 war die Zelle nicht gesezt und das erhöhen des Nachbar Zählers wi
+                       242     ;INC R7;                        ;Sonst: Erhöhen des Nachbarzählers
+                       243     ;rightCheckDone:
+                       244     ;ret                    ;Fertig -> Rücksprung
+                       245
+                       246     ;----------------------
+                       247     ; Kopieren der neuen Generation auf die Speicherstellen welche welche gezeichnet werden
+                       248     ;----------------------
+                       249     copyNewGenerationToField:
+0128 7864              250     MOV R0,#100
+012A 7900              251     MOV R1,#0
+012C E2                252     MOVX A,@R0
+012D F3                253     MOVX @R1,A
+                       254
+012E 7865              255     MOV R0,#101
+0130 7901              256     MOV R1,#1
+0132 E2                257     MOVX A,@R0
+0133 F3                258     MOVX @R1,A
+                       259
+0134 7866              260     MOV R0,#102
+0136 7902              261     MOV R1,#2
+0138 E2                262     MOVX A,@R0
+0139 F3                263     MOVX @R1,A
+                       264
+013A 7867              265     MOV R0,#103
+013C 7903              266     MOV R1,#3
+013E E2                267     MOVX A,@R0
+013F F3                268     MOVX @R1,A
+                       269
+0140 7868              270     MOV R0,#104
+0142 7904              271     MOV R1,#4
+0144 E2                272     MOVX A,@R0
+0145 F3                273     MOVX @R1,A
+                       274
+0146 7869              275     MOV R0,#105
+0148 7905              276     MOV R1,#5
+014A E2                277     MOVX A,@R0
+014B F3                278     MOVX @R1,A
+                       279
+014C 786A              280     MOV R0,#106
+014E 7906              281     MOV R1,#6
+0150 E2                282     MOVX A,@R0
+0151 F3                283     MOVX @R1,A
+                       284
+0152 786B              285     MOV R0,#107
+0154 7907              286     MOV R1,#7
+0156 E2                287     MOVX A,@R0
+0157 F3                288     MOVX @R1,A
+                       289
+0158 22                290     ret
+                       291
+                       292     ;----------------------
+                       293     ; Zeichen der Speicher stelle 0h bis 7h auf die LED-Matrix
+                       294     ;----------------------
+                       295     display:
+0159 7800              296     mov R0,#0h
+015B 7901              297     mov R1,#00000001b
+015D 120176            298     call displayRow
+0160 120176            299     call displayRow
+0163 120176            300     call displayRow
+0166 120176            301     call displayRow
+0169 120176            302     call displayRow
+016C 120176            303     call displayRow
+016F 120176            304     call displayRow
+0172 120176            305     call displayRow
+0175 22                306     ret
+                       307
+                       308     ;----------------------
+                       309     ; Zeichen der Aktuellen Zeile
+                       310     ;----------------------
+                       311     displayRow:
+0176 E2                312     movx A,@R0
+0177 89B0              313     mov P3, R1
+0179 F5A0              314     mov P2, a
+017B 75A000            315     mov P2,#0
+                       316
+017E 08                317     inc R0
+017F E9                318     MOV A,R1
+0180 23                319     RL A
+0181 F9                320     MOV R1,A
+0182 22                321     ret
+                       322
+                       323     ;----------------------
+                       324     ; Nutzereingabe für das Spielfeld
+                       325     ;----------------------
+                       326     initCanvas:
+0183 7800              327     MOV R0,#0;                              ;Zeilen zähler
+0185 75B001            328     MOV P3,#00000001                        ;
                        329
-0188 08                330     INC R0
-0189 7400              331     MOV A, #00000000b
-018B F2                332     movx @R0,A
-                       333
-018C 08                334     INC R0
-018D 7438              335     MOV A, #00111000b
-018F F2                336     movx @R0,A
-                       337
-0190 08                338     INC R0
-0191 7420              339     MOV A, #00100000b
-0193 F2                340     movx @R0,A
-                       341
-0194 08                342     INC R0
-0195 7410              343     MOV A, #00010000b
-0197 F2                344     movx @R0,A
-                       345
-0198 08                346     INC R0
-0199 7400              347     MOV A, #00000000b
-019B F2                348     movx @R0,A
-                       349
-019C 08                350     INC R0
-019D 7400              351     MOV A, #00000000b
-019F F2                352     movx @R0,A
-                       353
-01A0 08                354     INC R0
-01A1 7400              355     MOV A, #00000000b
-01A3 F2                356     movx @R0,A
-01A4 22                357     ret
-                       358
-                       359     ; -----------------
-                       360     ; Masken, sollten noch kombiniert werden ;)
-                       361     ;------------------
-01A5 8040201008        362     table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
+                       330     getNextRowInput:
+                       331     waitForConfirmation:
+0188 E580              332     MOV A,P0;
+018A 5401              333     ANL A,#00000001b
+018C 70FA              334     jnz waitForConfirmation                 ;Warte bis P0.0 gedrückt wurde
+                       335     waitForConfirmationButtonRelease:
+018E E580              336     MOV A,P0;
+0190 5401              337     ANL A,#00000001b
+0192 60FA              338     jz waitForConfirmationButtonRelease     ;Warte bis P0.0 "Losgelassen" wurde
+                       339
+0194 E590              340     MOV A, P1               ;Zeile 0 in Akku
+0196 F4                341     CPL A
+0197 F2                342     movx @R0,A              ;Speichern
+                       343
+                       344
+0198 F5A0              345     mov P2, a
+019A 75A000            346     mov P2,#0
+                       347
+019D E5B0              348     mov a,P3
+019F 23                349     RL A
+01A0 F5B0              350     mov p3,a
+01A2 08                351     inc R0
+                       352
+01A3 B808E2            353     cjne R0,#8,getNextRowInput;
+                       354
+01A6 22                355     ret
+                       356
+                       357     ; -----------------
+                       358     ; Masken, sollten noch kombiniert werden ;)
+                       359     ;------------------
+01A7 8040201008        360     table: db 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00000001b
      040201
-01AD 0180402010        363     table2: db 00000001b, 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00
+01AF 0180402010        361     table2: db 00000001b, 10000000b, 01000000b, 00100000b, 00010000b, 00001000b, 00000100b, 00000010b, 00
      0804020180
-                       364
-                       365     end
+                       362
+                       363     end
 ASSEMBLY COMPLETE, NO ERRORS FOUND, 1 WARNING
 
 
@@ -464,6 +462,7 @@ EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
 F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
 FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
 GETBOTTOMROW . . . . . . . . . . . .  C  ADDR  00FCH
+GETNEXTROWINPUT. . . . . . . . . . .  C  ADDR  0188H
 GOTBOTTOMROW . . . . . . . . . . . .  C  ADDR  00FEH
 GOTTOPROW. . . . . . . . . . . . . .  C  ADDR  00EAH
 IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H
@@ -491,8 +490,8 @@ NEW_GENERATION . . . . . . . . . . .  C  ADDR  0097H
 OSCCON . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
 OV . . . . . . . . . . . . . . . . .  B  ADDR  00D2H  NOT USED
 P. . . . . . . . . . . . . . . . . .  B  ADDR  00D0H  NOT USED
-P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H  NOT USED
-P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H  NOT USED
+P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H
+P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H
 P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
 P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
 P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
@@ -556,8 +555,8 @@ T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
 T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
 T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
 T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
-TABLE. . . . . . . . . . . . . . . .  C  ADDR  01A5H
-TABLE2 . . . . . . . . . . . . . . .  C  ADDR  01ADH
+TABLE. . . . . . . . . . . . . . . .  C  ADDR  01A7H
+TABLE2 . . . . . . . . . . . . . . .  C  ADDR  01AFH
 TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
 TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
 TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
@@ -580,6 +579,8 @@ TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH
 TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH
 TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
 TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
+WAITFORCONFIRMATION. . . . . . . . .  C  ADDR  0188H
+WAITFORCONFIRMATIONBUTTONRELEASE . .  C  ADDR  018EH
 WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED

@@ -36,6 +36,8 @@ reti		;Springe zur Stelle im Code vor dem Interrupt
 ;------------------
 ORG 50h
 init:
+call initCanvas
+
 mov IE, #10001010b	;Setze EA, ET0, ET1 um die Timer einzustellen
 mov tmod, #00010001b	;Setze timer modus für T0 und T1 auf 16Bit
 
@@ -44,7 +46,6 @@ SETB TR0		;Starte T0
 call setTimer1		;Setze Startwerte für T1
 SETB TR1		;Starte T1
 
-call initCanvas
 call display
 
 call main
@@ -319,41 +320,38 @@ RL A
 MOV R1,A
 ret
 
-; -----------------
-; Initialisieren der Zeichenfläche
-;------------------
+;----------------------
+; Nutzereingabe für das Spielfeld
+;----------------------
 initCanvas:
-Mov R0,#0;
-MOV A, #00000000b	;Zeile 0
+MOV R0,#0;				;Zeilen zähler
+MOV P3,#00000001			;
+
+getNextRowInput:
+waitForConfirmation:
+MOV A,P0;
+ANL A,#00000001b
+jnz waitForConfirmation			;Warte bis P0.0 gedrückt wurde
+waitForConfirmationButtonRelease:
+MOV A,P0;
+ANL A,#00000001b
+jz waitForConfirmationButtonRelease	;Warte bis P0.0 "Losgelassen" wurde
+
+MOV A, P1		;Zeile 0 in Akku
+CPL A
 movx @R0,A		;Speichern
 
-INC R0
-MOV A, #00000000b
-movx @R0,A
 
-INC R0
-MOV A, #00111000b
-movx @R0,A
+mov P2, a
+mov P2,#0
 
-INC R0
-MOV A, #00100000b
-movx @R0,A
+mov a,P3
+RL A
+mov p3,a
+inc R0
 
-INC R0
-MOV A, #00010000b
-movx @R0,A
+cjne R0,#8,getNextRowInput;
 
-INC R0
-MOV A, #00000000b
-movx @R0,A
-
-INC R0
-MOV A, #00000000b
-movx @R0,A
-
-INC R0
-MOV A, #00000000b
-movx @R0,A
 ret
 
 ; -----------------
